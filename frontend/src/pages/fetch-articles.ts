@@ -1,6 +1,6 @@
-// src/backend/fetch-feed.ts (or wherever your backend code lives)
+// pages/api/fetch-feed.ts (or similar)
+import type { NextApiRequest, NextApiResponse } from 'next';
 import Parser from 'rss-parser';
-import { Request, Response } from 'express'; // assuming Express
 
 type Article = {
   title: string;
@@ -25,46 +25,22 @@ const sourceThumbnailMap: Record<string, string> = Object.fromEntries(
 );
 
 const detectTags = (article: Article): string[] => {
-  const tags: string[] = [];
-  const title = article.title.toLowerCase();
-  const description = article.description.toLowerCase();
-  const isAudio =
-    title.includes('podcast') ||
-    description.includes('audio') ||
-    article.link.endsWith('.mp3');
-
-  tags.push(isAudio ? 'audio' : 'article');
-
-  let domain = '';
-  try {
-    domain = new URL(article.link).hostname.replace(/^www\./, '');
-  } catch {
-    domain = article.source?.toLowerCase() ?? '';
-  }
-
-  const bias = sourceBiasMap[domain];
-  if (bias) tags.push(bias);
-
-  return tags;
+  // ... same as your function
 };
 
 const getThumbnail = (article: Article): string => {
-  let domain = '';
-  try {
-    domain = new URL(article.link).hostname.replace(/^www\./, '');
-  } catch {
-    domain = article.source?.toLowerCase() ?? '';
-  }
-
-  return (
-    sourceThumbnailMap[domain] || 'https://via.placeholder.com/40?text=No+Logo'
-  );
+  // ... same as your function
 };
 
-// Express route handler
-export async function fetchFeedHandler(req: Request, res: Response) {
+const parser = new Parser();
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 
   const feeds: string[] = req.body.feeds;
@@ -73,7 +49,6 @@ export async function fetchFeedHandler(req: Request, res: Response) {
     return res.status(400).json({ error: 'feeds must be a non-empty array' });
   }
 
-  const parser = new Parser();
   const allArticles: Article[] = [];
 
   for (const feedUrl of feeds.slice(0, 10)) {
