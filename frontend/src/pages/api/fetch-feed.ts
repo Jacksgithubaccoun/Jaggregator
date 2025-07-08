@@ -75,7 +75,7 @@ export default async function handler(
     return res.status(400).json({ error: 'feeds must be a non-empty array' });
   }
 
-  const parser = new Parser();
+  const parser = new parser();
   const allArticles: Article[] = [];
 
   for (const feedUrl of feeds.slice(0, 10)) {
