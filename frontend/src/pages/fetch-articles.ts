@@ -1,6 +1,6 @@
-// pages/api/fetch-feed.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
+// src/backend/fetch-feed.ts (or wherever your backend code lives)
 import Parser from 'rss-parser';
+import { Request, Response } from 'express'; // assuming Express
 
 type Article = {
   title: string;
@@ -61,17 +61,15 @@ const getThumbnail = (article: Article): string => {
   );
 };
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+// Express route handler
+export async function fetchFeedHandler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const feeds: string[] = req.body.feeds;
 
-  if (!Array.isArray(feeds)) {
+  if (!Array.isArray(feeds) || feeds.length === 0) {
     return res.status(400).json({ error: 'feeds must be a non-empty array' });
   }
 
@@ -111,4 +109,3 @@ export default async function handler(
 
   return res.status(200).json(allArticles);
 }
-
