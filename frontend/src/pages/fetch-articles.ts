@@ -1,8 +1,6 @@
-// server/fetch-articles.ts
-import express from 'express';
-import Parser from 'rss-parser';;
-
-const router = express.Router();
+// pages/api/fetch-feed.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import Parser from 'rss-parser';
 
 type Article = {
   title: string;
@@ -17,7 +15,6 @@ type Article = {
 const sourceBiasMap: Record<string, string> = {
   'cnn.com': 'left wing',
   'foxnews.com': 'right wing',
-  // ...etc
 };
 
 const sourceThumbnailMap: Record<string, string> = Object.fromEntries(
@@ -29,7 +26,6 @@ const sourceThumbnailMap: Record<string, string> = Object.fromEntries(
 
 const detectTags = (article: Article): string[] => {
   const tags: string[] = [];
-
   const title = article.title.toLowerCase();
   const description = article.description.toLowerCase();
   const isAudio =
@@ -65,8 +61,14 @@ const getThumbnail = (article: Article): string => {
   );
 };
 
-// POST /api/fetch-articles
-router.post('/fetch-articles', async (req, res) => {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const feeds: string[] = req.body.feeds;
 
   if (!Array.isArray(feeds)) {
@@ -85,8 +87,7 @@ router.post('/fetch-articles', async (req, res) => {
         const article: Article = {
           title: item.title || 'No title',
           link: item.link || '',
-          pubDate:
-            item.pubDate || item.isoDate || new Date().toISOString(),
+          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
           source,
           description: item.contentSnippet || item.content || '',
           tags: [],
@@ -105,11 +106,9 @@ router.post('/fetch-articles', async (req, res) => {
   }
 
   allArticles.sort(
-    (a, b) =>
-      new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
   );
 
   return res.status(200).json(allArticles);
-});
+}
 
-export default router;
