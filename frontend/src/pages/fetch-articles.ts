@@ -54,7 +54,8 @@ const detectTags = (article: Article): string[] => {
 };
 
 const getThumbnail = (article: Article): string => {
-  // ... same as your function
+  const domain = new URL(article.link).hostname.replace('www.', '');
+  return sourceThumbnailMap[domain] || '/images/fallback.png';
 };
 
 const parser = new Parser();
