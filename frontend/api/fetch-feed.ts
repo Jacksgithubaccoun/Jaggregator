@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import Parser from 'rss-parser';
 
 type Article = {
@@ -60,9 +60,11 @@ const getThumbnail = (article: Article): string => {
   );
 };
 
+import type { NextApiRequest, NextApiResponse } from 'next';
+
 export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
+  req: NextApiRequest,
+  res: NextApiResponse
 ) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
