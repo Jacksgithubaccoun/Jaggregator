@@ -1,52 +1,113 @@
-// fetch-feed.ts
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Parser from 'rss-parser';
-import { Request, Response } from 'express'; // only if using express
-
-const parser = new Parser();
 
 type Article = {
-  title?: string;
-  link?: string;
-  pubDate?: string;
-  description?: string;
-  source?: string;
-  thumbnail?: string;
-  tags?: string[];
-  feedUrl?: string;
+  title: string;
+  link: string;
+  pubDate: string;
+  source: string;
+  description: string;
+  tags: string[];
+  thumbnail: string;
 };
 
-// Express-style handler function
-export async function fetchFeedHandler(req: Request, res: Response) {
+const sourceBiasMap: Record<string, string> = {
+  'cnn.com': 'left wing',
+  'foxnews.com': 'right wing',
+};
+
+const sourceThumbnailMap: Record<string, string> = Object.fromEntries(
+  Object.keys(sourceBiasMap).map((domain) => [
+    domain,
+    `https://logo.clearbit.com/${domain}`,
+  ])
+);
+
+const detectTags = (article: Article): string[] => {
+  const tags: string[] = [];
+  const title = article.title.toLowerCase();
+  const description = article.description.toLowerCase();
+  const isAudio =
+    title.includes('podcast') ||
+    description.includes('audio') ||
+    article.link.endsWith('.mp3');
+
+  tags.push(isAudio ? 'audio' : 'article');
+
+  let domain = '';
+  try {
+    domain = new URL(article.link).hostname.replace(/^www\./, '');
+  } catch {
+    domain = article.source?.toLowerCase() ?? '';
+  }
+
+  const bias = sourceBiasMap[domain];
+  if (bias) tags.push(bias);
+
+  return tags;
+};
+
+const getThumbnail = (article: Article): string => {
+  let domain = '';
+  try {
+    domain = new URL(article.link).hostname.replace(/^www\./, '');
+  } catch {
+    domain = article.source?.toLowerCase() ?? '';
+  }
+
+  return (
+    sourceThumbnailMap[domain] || 'https://via.placeholder.com/40?text=No+Logo'
+  );
+};
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const { url } = req.body;
+  const feeds: string[] = req.body.feeds;
 
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'Missing or invalid url in request body' });
+  if (!Array.isArray(feeds) || feeds.length === 0) {
+    return res.status(400).json({ error: 'feeds must be a non-empty array' });
+  }
+
+  const parser = new Parser();
+  const allArticles: Article[] = [];
+
+  for (const feedUrl of feeds.slice(0, 10)) {
+    try {
+      const feed = await parser.parseURL(feedUrl);
+      const source = feed.title || 'RSS Feed';
+
+      const articles = (feed.items || []).slice(0, 15).map((item) => {
+        const article: Article = {
+          title: item.title || 'No title',
+          link: item.link || '',
+          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+          source,
+          description: item.contentSnippet || item.content || '',
+          tags: [],
+          thumbnail: '',
+        };
+
+        article.tags = detectTags(article);
+        article.thumbnail = getThumbnail(article);
+        return article;
+      });
+
+      allArticles.push(...articles);
+    } catch (err: any) {
+      console.warn(`Failed to parse ${feedUrl}: ${err.message}`);
     }
-
-    // Parse the feed URL
-    const feed = await parser.parseURL(url);
-
-    // Map feed items to your articles format
-    const articles: Article[] = feed.items.map((item) => ({
-      title: item.title || '',
-      link: item.link || '',
-      pubDate: item.pubDate || '',
-      description: item.contentSnippet || '',
-      source: feed.title || '',
-      thumbnail: item.enclosure?.url || '',
-      tags: [], // no tags by default
-      feedUrl: url,
-    }));
-
-    return res.status(200).json(articles);
-  } catch (error) {
-    console.error('Failed to fetch RSS feed:', error);
-    return res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
   }
+
+  allArticles.sort(
+    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+  );
+
+  return res.status(200).json(allArticles);
 }
