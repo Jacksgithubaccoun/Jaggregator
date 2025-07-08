@@ -78,7 +78,7 @@ export default async function handler(
 
   const parser = new Parser();
 
-const articles = (feed.items || []).slice(0, 15).map((item: Item) => {
+const articles = (feeds.items || []).slice(0, 15).map((item: Item) => {
   const article: Article = {
     title: item.title || 'No title',
     link: item.link || '',
