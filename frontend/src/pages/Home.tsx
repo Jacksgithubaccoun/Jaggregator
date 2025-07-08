@@ -14,58 +14,61 @@ const Home: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
-  const [visibleCount, setVisibleCount] = useState(15); //
-  // Add feed function (called by FeedsManager)
-  const addFeed = async (url: string): Promise<void> => {
-    if (feeds.includes(url)) return; // Avoid duplicates
+  const [visibleCount, setVisibleCount] = useState(15);
 
+  // Secret trigger state
+  const [typedKeys, setTypedKeys] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
+
+  // Secret phrase listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      setTypedKeys((prev) => {
+        const next = (prev + e.key.toLowerCase()).replace(/[^a-z]/g, '').slice(-30);
+        if (next.includes('thepowersthatbe')) {
+          setShowSecret(true);
+        }
+        return next;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const addFeed = async (url: string): Promise<void> => {
+    if (feeds.includes(url)) return;
     setLoading(true);
     setError('');
     try {
-      console.log('Sending feed URL:', url);
-
       const res = await fetch('/api/fetch-feed', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feeds: [url] }),
       });
-
-      console.log('Response status:', res.status);
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('Error response:', errorText);
-        throw new Error('Failed to fetch feed');
-      }
-
+      if (!res.ok) throw new Error('Failed to fetch feed');
       const newArticles = await res.json();
-
       setFeeds((prev) => [...prev, url]);
       setArticles((prev) => [...prev, ...newArticles]);
     } catch (err) {
-      console.error('Add feed error:', err);
       setError('Failed to add feed.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Remove feed function (called by FeedsManager)
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
-    setArticles((prev) => prev.filter((a) => a.feedUrl !== url)); // Remove related articles
+    setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
   };
 
-  // Clear error message
   const clearError = () => setError('');
 
-  // Restore feeds from localStorage and fetch articles for all feeds on mount
   useEffect(() => {
     const loadFeeds = async () => {
       try {
         const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
         setFeeds(savedFeeds);
-
         const articlesArrays = await Promise.all(
           savedFeeds.map(async (url) => {
             try {
@@ -74,44 +77,31 @@ const Home: React.FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ feeds: [url] }),
               });
-
-              if (!res.ok) {
-                const text = await res.text();
-                console.error('Error fetching feed:', text);
-                return [];
-              }
-
+              if (!res.ok) return [];
               return await res.json();
-            } catch (err) {
-              console.error('Error fetching feed:', err);
+            } catch {
               return [];
             }
           })
         );
-
         setArticles(articlesArrays.flat());
-      } catch (err) {
+      } catch {
         setError('Failed to fetch articles from saved feeds.');
-        console.error(err);
       }
     };
-
     loadFeeds();
   }, []);
 
-  // Save feeds to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('feeds', JSON.stringify(feeds));
   }, [feeds]);
 
-  // Tag toggling helper
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  // Filter articles by selected tags, search term, and source filter
   const filteredArticles = Array.isArray(articles)
     ? articles.filter((article) => {
         const matchesTags =
@@ -123,15 +113,11 @@ const Home: React.FC = () => {
         const matchesSource =
           !sourceFilter.trim() ||
           article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
-
         return matchesTags && matchesSearch && matchesSource;
       })
     : [];
 
-  // Limit visible articles for pagination
   const visibleArticles = filteredArticles.slice(0, visibleCount);
-
-    
 
   return (
     <>
@@ -205,7 +191,7 @@ const Home: React.FC = () => {
             <p style={styles.statusText}>No articles found.</p>
           )}
           <ul style={styles.articleList}>
-            {filteredArticles.map((article) => (
+            {visibleArticles.map((article) => (
               <li key={article.link} style={styles.articleItem}>
                 <img
                   src={article.thumbnail || '/images/fallback.png'}
@@ -241,39 +227,62 @@ const Home: React.FC = () => {
             ))}
           </ul>
           {visibleCount < filteredArticles.length && (
-  <button
-    onClick={() => setVisibleCount((count) => count + 10)}
-    style={{ 
-      marginTop: 20, 
-      padding: '10px 20px', 
-      cursor: 'pointer', 
-      borderRadius: 6,
-      border: '1px solid #0f0',
-      backgroundColor: 'transparent',
-      color: '#0f0',
-      fontFamily: "'Courier New', Courier, monospace",
-    }}
-  >
-    Load More
-  </button>
-)}
+            <button
+              onClick={() => setVisibleCount((count) => count + 10)}
+              style={{
+                marginTop: 20,
+                padding: '10px 20px',
+                cursor: 'pointer',
+                borderRadius: 6,
+                border: '1px solid #0f0',
+                backgroundColor: 'transparent',
+                color: '#0f0',
+                fontFamily: "'Courier New', Courier, monospace",
+              }}
+            >
+              Load More
+            </button>
+          )}
         </section>
+
+        {/* Invisible link */}
         <a
-  href="https://jacksgithubaccoun.github.io/Shaguar/"
-  style={{
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 1,
-    height: 1,
-    overflow: 'hidden',
-    opacity: 0,
-    pointerEvents: 'auto', // Important: still clickable
-  }}
-  aria-hidden="true"
->
-  hidden
-</a>
+          href="https://jacksgithubaccoun.github.io/Shaguar/"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: 1,
+            height: 1,
+            overflow: 'hidden',
+            opacity: 0,
+            pointerEvents: 'auto',
+          }}
+          aria-hidden="true"
+        >
+          hidden
+        </a>
+
+        {/* Secret Button */}
+        {showSecret && (
+          <a
+            href="/secret"
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              padding: '8px 12px',
+              backgroundColor: '#0f0',
+              color: '#000',
+              borderRadius: 8,
+              textDecoration: 'none',
+              fontWeight: 'bold',
+              zIndex: 9999,
+            }}
+          >
+            🔒 Secret
+          </a>
+        )}
       </main>
     </>
   );
@@ -382,4 +391,5 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default Home;
+
 
