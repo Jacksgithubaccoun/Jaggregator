@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-const Parser = require('rss-parser');
+import type Parser from 'rss-parser';
+const ParserClass = require('rss-parser');
 
 type Article = {
   title: string;
@@ -83,7 +84,7 @@ export default async function handler(
       const feed = await parser.parseURL(feedUrl);
       const source = feed.title || 'RSS Feed';
 
-      const articles = (feed.items || []).slice(0, 15).map((item) => {
+      const articles = (feed.items || []).slice(0, 15).map((Parser.item) => {
         const article: Article = {
           title: item.title || 'No title',
           link: item.link || '',
