@@ -15,65 +15,19 @@ const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
 
-  // Restore feeds from localStorage on mount and fetch articles for all feeds
-  useEffect(() => {
-    const loadFeeds = async () => {
-      try {
-        const savedFeeds = JSON.parse(localStorage.getItem('feeds') || '[]');
-        setFeeds(savedFeeds);
-
-        // Fetch articles from all saved feeds in parallel
-        const articlesArrays = await Promise.all(
-          savedFeeds.map(async (url: string) => {
-            try {
-              const res = await fetch('/api/fetch-feed', {
-                method: 'POST',
-                body: JSON.stringify({ url }),
-                headers: { 'Content-Type': 'application/json' },
-              });
-
-              if (!res.ok) {
-                const text = await res.text();
-                console.error('Error fetching feed:', text);
-                return [];
-              }
-
-              return await res.json();
-            } catch (err) {
-              console.error('Error fetching feed:', err);
-              return [];
-            }
-          })
-        );
-
-        // Flatten the arrays of articles into a single array
-        setArticles(articlesArrays.flat());
-      } catch (err) {
-        setError('Failed to fetch articles from saved feeds.');
-        console.error(err);
-      }
-    };
-
-    loadFeeds();
-  }, []);
-
-  // Save feeds to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('feeds', JSON.stringify(feeds));
-  }, [feeds]);
-
+  // Add feed function (called by FeedsManager)
   const addFeed = async (url: string): Promise<void> => {
+    if (feeds.includes(url)) return; // Avoid duplicates
+
     setLoading(true);
     setError('');
     try {
-      if (feeds.includes(url)) return;
-
       console.log('Sending feed URL:', url);
 
-      const res = await fetch('./fetch-articles', {
+      const res = await fetch('/api/fetch-feed', {
         method: 'POST',
-        body: JSON.stringify({ url }),
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feeds: [url] }),
       });
 
       console.log('Response status:', res.status);
@@ -96,19 +50,68 @@ const Home: React.FC = () => {
     }
   };
 
+  // Remove feed function (called by FeedsManager)
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
-    setArticles((prev) => prev.filter((a) => a.feedUrl !== url)); // Optional: remove articles from removed feed
+    setArticles((prev) => prev.filter((a) => a.feedUrl !== url)); // Remove related articles
   };
 
+  // Clear error message
   const clearError = () => setError('');
 
+  // Restore feeds from localStorage and fetch articles for all feeds on mount
+  useEffect(() => {
+    const loadFeeds = async () => {
+      try {
+        const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
+        setFeeds(savedFeeds);
+
+        const articlesArrays = await Promise.all(
+          savedFeeds.map(async (url) => {
+            try {
+              const res = await fetch('/api/fetch-feed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ feeds: [url] }),
+              });
+
+              if (!res.ok) {
+                const text = await res.text();
+                console.error('Error fetching feed:', text);
+                return [];
+              }
+
+              return await res.json();
+            } catch (err) {
+              console.error('Error fetching feed:', err);
+              return [];
+            }
+          })
+        );
+
+        setArticles(articlesArrays.flat());
+      } catch (err) {
+        setError('Failed to fetch articles from saved feeds.');
+        console.error(err);
+      }
+    };
+
+    loadFeeds();
+  }, []);
+
+  // Save feeds to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('feeds', JSON.stringify(feeds));
+  }, [feeds]);
+
+  // Tag toggling helper
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
+  // Filter articles by selected tags, search term, and source filter
   const filteredArticles = Array.isArray(articles)
     ? articles.filter((article) => {
         const matchesTags =
