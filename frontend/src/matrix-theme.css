@@ -5,7 +5,7 @@ body, html, #root {
   background-color: #000; /* black background */
   color: #0f0; /* bright green text */
   font-family: 'Courier New', Courier, monospace; /* monospace font */
-  overflow: hidden; /* avoid scrollbars from animation */
+  overflow-y: auto; /* avoid scrollbars from animation */
 }
 
 h1, p, button, input {
