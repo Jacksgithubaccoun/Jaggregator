@@ -77,22 +77,24 @@ export default async function handler(
   }
 
   const parser = new Parser();
+  const allArticles: Article[] = [];
 
-const articles = (feeds.items || []).slice(0, 15).map((item: Item) => {
-  const article: Article = {
-    title: item.title || 'No title',
-    link: item.link || '',
-    pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
-    source,
-    description: item.contentSnippet || item.content || '',
-    tags: [],
-    thumbnail: '',
-  };
+  for (const feedUrl of feeds.slice(0, 10)) {
+    try {
+      const feed = await parser.parseURL(feedUrl);
+      const source = feed.title || 'RSS Feed';
 
-  article.tags = detectTags(article);
-  article.thumbnail = getThumbnail(article);
-  return article;
-});
+      // Use rss-parser's Item type for better typings
+      const articles = (feed.items || []).slice(0, 15).map((item: Parser.Item) => {
+        const article: Article = {
+          title: item.title || 'No title',
+          link: item.link || '',
+          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+          source,
+          description: item.contentSnippet || item.content || '',
+          tags: [],
+          thumbnail: '',
+        };
 
         article.tags = detectTags(article);
         article.thumbnail = getThumbnail(article);
