@@ -1,6 +1,6 @@
-// src/pages/api/fetch-feed.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
+// fetch-feed.ts
 import Parser from 'rss-parser';
+import { Request, Response } from 'express'; // only if using express
 
 const parser = new Parser();
 
@@ -15,7 +15,8 @@ type Article = {
   feedUrl?: string;
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// Express-style handler function
+export async function fetchFeedHandler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
@@ -49,4 +50,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
   }
 }
-
