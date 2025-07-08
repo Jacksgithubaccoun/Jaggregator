@@ -14,7 +14,7 @@ const Home: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
-  const [visibleCount, setVisibleCount] = useState(15);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   // Secret trigger state
   const [typedKeys, setTypedKeys] = useState('');
@@ -236,7 +236,7 @@ const Home: React.FC = () => {
                 borderRadius: 6,
                 border: '1px solid #0f0',
                 backgroundColor: 'transparent',
-                color: '#0f0',
+                color: '#000',
                 fontFamily: "'Courier New', Courier, monospace",
               }}
             >
@@ -324,7 +324,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #ccc',
     borderRadius: 20,
     padding: '5px 15px',
-    background: '#eee',
+    background: '#000',
     cursor: 'pointer',
   },
   tagButtonActive: {
