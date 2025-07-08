@@ -61,8 +61,8 @@ const getThumbnail = (article: Article): string => {
 };
 
 export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
+  req: NextApiRequest,
+  res: NextApiResponse
 ) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
