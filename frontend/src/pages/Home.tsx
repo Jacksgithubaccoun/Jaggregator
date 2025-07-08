@@ -117,7 +117,11 @@ const Home: React.FC = () => {
       })
     : [];
 
-  const visibleArticles = filteredArticles.slice(0, visibleCount);
+  const filteredArticlesSorted = filteredArticles.sort(
+  (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+);
+
+const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
   return (
     <>
@@ -235,8 +239,8 @@ const Home: React.FC = () => {
                 cursor: 'pointer',
                 borderRadius: 6,
                 border: '1px solid #0f0',
-                backgroundColor: 'transparent',
-                color: '#000',
+                backgroundColor: '000',
+                color: '#0f0',
                 fontFamily: "'Courier New', Courier, monospace",
               }}
             >
