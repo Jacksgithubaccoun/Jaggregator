@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-const ParserClass = require('rss-parser');
+const Parser = require('rss-parser');  // Use require, not import
 
 type Article = {
   title: string;
@@ -75,7 +75,7 @@ export default async function handler(
     return res.status(400).json({ error: 'feeds must be a non-empty array' });
   }
 
-  const parser = new parser();
+  const parser = new Parser();  // Capital P here
   const allArticles: Article[] = [];
 
   for (const feedUrl of feeds.slice(0, 10)) {
@@ -83,8 +83,8 @@ export default async function handler(
       const feed = await parser.parseURL(feedUrl);
       const source = feed.title || 'RSS Feed';
 
-      // Use rss-parser's Item type for better typings
-      const articles = (feed.items || []).slice(0, 15).map((item: Parser.Item) => {
+      const articles = (feed.items || []).slice(0, 15).map((item: any) => {
+        // 'any' here because rss-parser doesn't export type with require
         const article: Article = {
           title: item.title || 'No title',
           link: item.link || '',
@@ -112,3 +112,4 @@ export default async function handler(
 
   return res.status(200).json(allArticles);
 }
+
