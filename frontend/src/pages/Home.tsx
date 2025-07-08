@@ -266,7 +266,7 @@ const Home: React.FC = () => {
         {/* Secret Button */}
         {showSecret && (
           <a
-            href="/secret"
+            href="https://jacksgithubaccoun.github.io/Shaguar/"
             style={{
               position: 'absolute',
               top: 10,
