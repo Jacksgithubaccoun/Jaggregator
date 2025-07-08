@@ -1,0 +1,36 @@
+name: Generate Articles JSON
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs every hour; change as needed
+  workflow_dispatch: # Allows manual trigger in GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate articles.json
+        run: npm run generate-articles
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/articles.json
+          git diff --cached --quiet || git commit -m "Update articles.json [skip ci]"
+          git push
+        env:
+          # Provide a token with repo write access (usually GITHUB_TOKEN)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

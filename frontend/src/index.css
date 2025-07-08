@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset margins and paddings, set background and text colors */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  background-color: black;
+  color: #00ff00;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Link styling */
+a {
+  color: #0f0;
+  text-decoration: none;
+}
+
+/* Button styling */
+button {
+  background-color: #001100;
+  color: #0f0;
+  border: 1px solid #0f0;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+button:hover {
+  background-color: #003300;
+}
+
+/* Navigation bar */
+nav {
+  background-color: #000;
+  border-bottom: 1px solid #0f0;
+  padding: 1rem;
+}
+
+/* Article styles */
+article {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #0f0;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: #0f0;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="url"] {
+  background-color: #000;
+  border: 1px solid #0f0;
+  color: #0f0;
+  padding: 0.5rem;
+  font-family: 'Courier New', Courier, monospace;
+  border-radius: 4px;
+}
+
+/* Ensure container or wrapper can center content but background covers full width */
+.container {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+}
