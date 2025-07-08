@@ -14,7 +14,7 @@ const Home: React.FC = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
-
+  const [visibleCount, setVisibleCount] = useState(15); //
   // Add feed function (called by FeedsManager)
   const addFeed = async (url: string): Promise<void> => {
     if (feeds.includes(url)) return; // Avoid duplicates
@@ -128,6 +128,11 @@ const Home: React.FC = () => {
       })
     : [];
 
+  // Limit visible articles for pagination
+  const visibleArticles = filteredArticles.slice(0, visibleCount);
+
+    
+
   return (
     <>
       <MatrixRain />
@@ -235,7 +240,40 @@ const Home: React.FC = () => {
               </li>
             ))}
           </ul>
+          {visibleCount < filteredArticles.length && (
+  <button
+    onClick={() => setVisibleCount((count) => count + 10)}
+    style={{ 
+      marginTop: 20, 
+      padding: '10px 20px', 
+      cursor: 'pointer', 
+      borderRadius: 6,
+      border: '1px solid #0f0',
+      backgroundColor: 'transparent',
+      color: '#0f0',
+      fontFamily: "'Courier New', Courier, monospace",
+    }}
+  >
+    Load More
+  </button>
+)}
         </section>
+        <a
+  href="https://jacksgithubaccoun.github.io/Shaguar/"
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
+    opacity: 0,
+    pointerEvents: 'auto', // Important: still clickable
+  }}
+  aria-hidden="true"
+>
+  hidden
+</a>
       </main>
     </>
   );
