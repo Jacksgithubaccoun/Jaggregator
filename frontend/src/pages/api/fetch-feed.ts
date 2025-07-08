@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import Parser from 'rss-parser';
+import Parser, { Item } from 'rss-parser';
 const ParserClass = require('rss-parser');
 
 type Article = {
@@ -77,23 +77,22 @@ export default async function handler(
   }
 
   const parser = new Parser();
-  const allArticles: Article[] = [];
 
-  for (const feedUrl of feeds.slice(0, 10)) {
-    try {
-      const feed = await parser.parseURL(feedUrl);
-      const source = feed.title || 'RSS Feed';
+const articles = (feed.items || []).slice(0, 15).map((item: Item) => {
+  const article: Article = {
+    title: item.title || 'No title',
+    link: item.link || '',
+    pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+    source,
+    description: item.contentSnippet || item.content || '',
+    tags: [],
+    thumbnail: '',
+  };
 
-      const articles = (feed.items || []).slice(0, 15).map((Parser.item) => {
-        const article: Article = {
-          title: item.title || 'No title',
-          link: item.link || '',
-          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
-          source,
-          description: item.contentSnippet || item.content || '',
-          tags: [],
-          thumbnail: '',
-        };
+  article.tags = detectTags(article);
+  article.thumbnail = getThumbnail(article);
+  return article;
+});
 
         article.tags = detectTags(article);
         article.thumbnail = getThumbnail(article);
