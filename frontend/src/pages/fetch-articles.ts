@@ -25,7 +25,32 @@ const sourceThumbnailMap: Record<string, string> = Object.fromEntries(
 );
 
 const detectTags = (article: Article): string[] => {
-  // ... same as your function
+  const tags: string[] = [];
+
+  const content = `${article.title} ${article.description}`.toLowerCase();
+
+  if (content.includes('podcast') || content.includes('audio')) {
+    tags.push('audio');
+  }
+
+  if (content.includes('opinion') || content.includes('editorial')) {
+    tags.push('article');
+  }
+
+  if (article.source.toLowerCase().includes('cnn') || content.includes('progressive')) {
+    tags.push('left wing');
+  }
+
+  if (article.source.toLowerCase().includes('fox') || content.includes('conservative')) {
+    tags.push('right wing');
+  }
+
+  // Example for alternative media
+  if (content.includes('substack') || content.includes('independent')) {
+    tags.push('alternative');
+  }
+
+  return tags;
 };
 
 const getThumbnail = (article: Article): string => {
