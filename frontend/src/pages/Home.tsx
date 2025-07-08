@@ -70,7 +70,7 @@ const Home: React.FC = () => {
 
       console.log('Sending feed URL:', url);
 
-      const res = await fetch('./fetch-articles', {
+      const res = await fetch('./fetch-feed', {
         method: 'POST',
         body: JSON.stringify({ url }),
         headers: { 'Content-Type': 'application/json' },
