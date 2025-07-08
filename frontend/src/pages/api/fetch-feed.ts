@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import type Parser from 'rss-parser';
+import Parser from 'rss-parser';
 const ParserClass = require('rss-parser');
 
 type Article = {
