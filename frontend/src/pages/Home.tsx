@@ -243,31 +243,38 @@ setArticles(uniqueArticles);
           {filteredArticles.length === 0 && !loading && !error && (
             <p style={styles.statusText}>No articles found.</p>
           )}
-          <ul style={styles.articleList}>
-            {visibleArticles.map((article) => (
-              <li key={article.link} style={styles.articleItem}>
-                <img
-                  src={article.thumbnail || '/images/fallback.png'}
-                  alt={`${article.source || 'News'} logo`}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/images/fallback.png';
-                  }}
-                  style={styles.thumbnail}
-                />
-                <div style={styles.articleContent}>
-                  <a
-                    href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.articleTitle}
-                  >
-                    {article.title}
-                  </a>
-                  <p style={styles.articleDescription}>{article.description}</p>
-                  <small style={styles.articleMeta}>
-                    {new Date(article.pubDate).toLocaleString()} | {article.source}
-                  </small>
+       <ul style={styles.articleList}>
+  {visibleArticles.map((article, idx) => {
+    // Use article.link if available, otherwise fallback to index
+    const key = article.link || `article-${idx}`;
+
+    // Debug logs — remove or comment out after testing
+    console.log('Rendering article:', key, 'Expanded article:', expandedArticle);
+
+    return (
+      <li key={key} style={styles.articleItem}>
+        <img
+          src={article.thumbnail || '/images/fallback.png'}
+          alt={`${article.source || 'News'} logo`}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = '/images/fallback.png';
+          }}
+          style={styles.thumbnail}
+        />
+        <div style={styles.articleContent}>
+          <a
+            href={article.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.articleTitle}
+          >
+            {article.title}
+          </a>
+          <p style={styles.articleDescription}>{article.description}</p>
+          <small style={styles.articleMeta}>
+            {new Date(article.pubDate).toLocaleString()} | {article.source}
+          </small>
 
                  {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
   <audio controls style={{ width: '100%' }} preload="metadata" key={article.link + '-audio'}>
