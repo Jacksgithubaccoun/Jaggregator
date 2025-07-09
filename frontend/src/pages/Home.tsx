@@ -389,7 +389,6 @@ const Home: React.FC = () => {
     </>
   );
 };
-
 const styles = {
   container: {
     maxWidth: '1000px',
@@ -397,13 +396,14 @@ const styles = {
     margin: 'auto',
     color: '#eee',
     fontFamily: "'Consolas', monospace",
-    overflowWrap: 'anywhere' as 'normal' | 'break-word' | 'anywhere',
-    wordBreak: 'break-word' as 'normal' | 'break-all' | 'keep-all' | 'break-word',
+    overflowWrap: 'anywhere' as const,
+    wordBreak: 'break-word' as const,
   },
   articleContent: {
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-    overflowX: 'auto', // just in case, for code or long content
+    whiteSpace: 'pre-wrap' as const,
+    wordBreak: 'break-word' as const,
+    overflowX: 'auto' as const,
+    flex: 1,
   },
   title: {
     fontSize: 48,
@@ -456,7 +456,7 @@ const styles = {
     marginTop: 30,
   },
   articleList: {
-    listStyle: 'none',
+    listStyle: 'none' as const,
     padding: 0,
     margin: 0,
   },
@@ -502,4 +502,4 @@ const styles = {
   },
 };
 
-export default Home;
+export default Home; 
