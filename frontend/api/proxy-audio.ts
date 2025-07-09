@@ -31,20 +31,17 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const options = {
     headers: {
-      // Forward the Range header if present for partial content support
-      ...(req.headers.range ? { Range: req.headers.range } : {}),
-      // You can add other headers here if needed
+      // Forward Range header if present (for partial content streaming)
+      Range: req.headers.range || '',
+      // You can forward other headers if needed here
     },
   };
 
   const proxyReq = client.get(targetUrl, options, (proxyRes) => {
-    // Set CORS headers to allow your frontend to access the proxied resource
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
-
-    // Pipe status and headers from target server to client response
+    // Forward status code (206 Partial Content if Range was requested)
     res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+
+    // Pipe data from the remote server directly to the client
     proxyRes.pipe(res);
   });
 
