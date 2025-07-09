@@ -11,8 +11,6 @@ const Home: React.FC = () => {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
-const [expandedContent, setExpandedContent] = useState<string>('');
-const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [error, setError] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,26 +37,22 @@ const [loadingFullArticle, setLoadingFullArticle] = useState(false);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const addFeed = async (url: string): Promise<void> => {
-    if (feeds.includes(url)) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/fetch-feed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ feeds: [url] }),
-      });
-      if (!res.ok) throw new Error('Failed to fetch feed');
-      const newArticles = await res.json();
-      setFeeds((prev) => [...prev, url]);
-      setArticles((prev) => [...prev, ...newArticles]);
-    } catch (err) {
-      setError('Failed to add feed.');
-    } finally {
-      setLoading(false);
-    }
-  };
+const addFeed = async (url: string): Promise<void> => {
+  if (feeds.includes(url)) return;
+  setLoading(true);
+  setError('');
+  try {
+    const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+    if (!res.ok) throw new Error('Failed to fetch feed articles');
+    const data = await res.json();
+    setFeeds((prev) => [...prev, url]);
+    setArticles((prev) => [...prev, ...data.articles]);
+  } catch (err) {
+    setError('Failed to add feed.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
@@ -69,24 +63,27 @@ const [loadingFullArticle, setLoadingFullArticle] = useState(false);
 
   useEffect(() => {
     const loadFeeds = async () => {
-      try {
-        const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
-        setFeeds(savedFeeds);
-        const articlesArrays = await Promise.all(
-          savedFeeds.map(async (url) => {
-            try {
-              const res = await fetch('/api/fetch-feed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ feeds: [url] }),
-              });
-              if (!res.ok) return [];
-              return await res.json();
-            } catch {
-              return [];
-            }
-          })
-        );
+  try {
+    const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
+    setFeeds(savedFeeds);
+    const articlesArrays = await Promise.all(
+      savedFeeds.map(async (url) => {
+        try {
+          const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data.articles || [];
+        } catch {
+          return [];
+        }
+      })
+    );
+    setArticles(articlesArrays.flat());
+  } catch {
+    setError('Failed to fetch articles from saved feeds.');
+  }
+};
+
         setArticles(articlesArrays.flat());
       } catch {
         setError('Failed to fetch articles from saved feeds.');
@@ -232,38 +229,27 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
         )}
 
         {/* Read here button */}
-        <button
-          onClick={async () => {
-            if (expandedArticle === article.link) {
-              setExpandedArticle(null);
-              setExpandedContent('');
-              return;
-            }
-            setExpandedArticle(article.link);
-            setLoadingFullArticle(true);
-            try {
-              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(article.link)}`);
-              const data = await res.json();
-              setExpandedContent(data.content || '<p>Failed to load content</p>');
-            } catch {
-              setExpandedContent('<p>Failed to load content</p>');
-            } finally {
-              setLoadingFullArticle(false);
-            }
-          }}
-          style={{
-            marginRight: 10,
-            border: '1px solid #0f0',
-            backgroundColor: 'transparent',
-            color: '#0f0',
-            borderRadius: 6,
-            padding: '5px 10px',
-            fontSize: 14,
-            cursor: 'pointer',
-          }}
-        >
-          {expandedArticle === article.link ? (loadingFullArticle ? 'Loading...' : 'Hide') : 'Read here'}
-        </button>
+       <button
+  onClick={() => {
+    if (expandedArticle === article.link) {
+      setExpandedArticle(null);
+    } else {
+      setExpandedArticle(article.link);
+    }
+  }}
+  style={{
+    marginRight: 10,
+    border: '1px solid #0f0',
+    backgroundColor: 'transparent',
+    color: '#0f0',
+    borderRadius: 6,
+    padding: '5px 10px',
+    fontSize: 14,
+    cursor: 'pointer',
+  }}
+>
+  {expandedArticle === article.link ? 'Hide' : 'Read here'}
+</button>
 
         {/* Visit source button */}
         <a
@@ -283,26 +269,27 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
         </a>
 
         {/* Expanded Reader */}
-        {expandedArticle === article.link && (
-          <div
-            style={{
-              marginTop: 20,
-              backgroundColor: '#111',
-              padding: 15,
-              borderRadius: 8,
-              border: '1px solid #333',
-            }}
-          >
-            {loadingFullArticle ? (
-              <p>Loading full article...</p>
-            ) : (
-              <div
-                dangerouslySetInnerHTML={{ __html: expandedContent }}
-                style={{ color: '#ccc', lineHeight: 1.6 }}
-              />
-            )}
-          </div>
-        )}
+{expandedArticle === article.link && (
+  <div
+    style={{
+      marginTop: 20,
+      backgroundColor: '#111',
+      padding: 15,
+      borderRadius: 8,
+      border: '1px solid #333',
+    }}
+  >
+    {loadingFullArticle ? (
+      <p>Loading full article...</p>
+    ) : (
+      <div
+        dangerouslySetInnerHTML={{ __html: expandedContent }}
+        style={{ color: '#ccc', lineHeight: 1.6 }}
+      />
+    )}
+  </div>
+)}
+       
 
         {/* Tags */}
         <div style={styles.articleTags}>
