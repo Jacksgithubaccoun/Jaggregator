@@ -39,10 +39,14 @@ const Home: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
-  const [expandedContent, setExpandedContent] = useState<Record<string, { content: string; audioSources: Record<string, string>; transcript: string }>>({});
+
+  const [expandedContent, setExpandedContent] = useState<Record<
+    string,
+    { content: string; audioSources: Record<string, string>; transcript: string }
+  >>({});
+
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
-  const [expandedTranscript, setExpandedTranscript] = useState('');
-  const [expandedAudioSources, setExpandedAudioSources] = useState<Record<string, string>>({});
+
   const clearError = () => setError('');
 
   useEffect(() => {
@@ -62,22 +66,8 @@ const Home: React.FC = () => {
 
   const addFeed = async (url: string): Promise<void> => {
     if (feeds.includes(url)) return;
-    setLoadingFullArticle(true);
-  try {
-    const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
-    if (!res.ok) throw new Error('Failed to load full article');
-    const data = await res.json();
-    setExpandedContent(data.content || 'No content available.');
-    setExpandedTranscript(data.transcript || '');
-    setExpandedAudioSources(data.audioSources || {});
-  } catch {
-    setExpandedContent('Failed to load full article.');
-    setExpandedTranscript('');
-    setExpandedAudioSources({});
-  } finally {
-    setLoadingFullArticle(false);
-  }
-};
+    setFeeds((prev) => [...prev, url]);
+  };
 
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
@@ -189,108 +179,301 @@ const Home: React.FC = () => {
   return (
     <>
       <MatrixRain />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.85)', zIndex: 5 }} />
-      <main style={{ maxWidth: 900, margin: '20px auto', padding: 16, color: '#ccc', position: 'relative', zIndex: 10 }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          zIndex: 5,
+        }}
+      />
+      <main
+        style={{
+          maxWidth: 900,
+          margin: '20px auto',
+          padding: 16,
+          color: '#ccc',
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
         <h1 style={{ fontSize: 32, marginBottom: 16, textAlign: 'center' }}>Jaggregator</h1>
-        <FeedsManager feeds={feeds} addFeed={addFeed} removeFeed={removeFeed} loading={loading} error={error} clearError={clearError} />
+        <FeedsManager
+          feeds={feeds}
+          addFeed={addFeed}
+          removeFeed={removeFeed}
+          loading={loading}
+          error={error}
+          clearError={clearError}
+        />
         <section style={{ marginBottom: 16 }}>
-          <input type="text" placeholder="Search articles..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: 8, background: '#222', border: '1px solid #555', borderRadius: 4, color: '#eee' }} disabled={loading} />
-          <input type="text" placeholder="Filter by source name..." value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} style={{ width: '100%', padding: 8, marginTop: 8, background: '#222', border: '1px solid #555', borderRadius: 4, color: '#eee' }} disabled={loading} />
+          <input
+            type="text"
+            placeholder="Search articles..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: 8,
+              background: '#222',
+              border: '1px solid #555',
+              borderRadius: 4,
+              color: '#eee',
+            }}
+            disabled={loading}
+          />
+          <input
+            type="text"
+            placeholder="Filter by source name..."
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            style={{
+              width: '100%',
+              padding: 8,
+              marginTop: 8,
+              background: '#222',
+              border: '1px solid #555',
+              borderRadius: 4,
+              color: '#eee',
+            }}
+            disabled={loading}
+          />
         </section>
-        <section style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <section
+          style={{
+            marginBottom: 16,
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
+        >
           {allTags.map((tag) => (
-            <button key={tag} onClick={() => toggleTag(tag)} style={{ backgroundColor: selectedTags.includes(tag) ? '#0f0' : '#333', border: '1px solid #555', borderRadius: 4, color: selectedTags.includes(tag) ? '#000' : '#ccc', padding: '6px 12px', cursor: 'pointer', fontWeight: selectedTags.includes(tag) ? 'bold' : 'normal' }} disabled={loading}>
+            <button
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              style={{
+                backgroundColor: selectedTags.includes(tag) ? '#0f0' : '#333',
+                border: '1px solid #555',
+                borderRadius: 4,
+                color: selectedTags.includes(tag) ? '#000' : '#ccc',
+                padding: '6px 12px',
+                cursor: 'pointer',
+                fontWeight: selectedTags.includes(tag) ? 'bold' : 'normal',
+              }}
+              disabled={loading}
+            >
               {tag}
             </button>
           ))}
         </section>
-        {loading && <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic' }}>Loading articles...</p>}
-        {!loading && error && <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic', color: '#f66' }}>{error}</p>}
+        {loading && (
+          <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic' }}>
+            Loading articles...
+          </p>
+        )}
+        {!loading && error && (
+          <p
+            style={{
+              textAlign: 'center',
+              marginTop: 16,
+              fontStyle: 'italic',
+              color: '#f66',
+            }}
+          >
+            {error}
+          </p>
+        )}
         <section>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {visibleArticles.map((article, idx) => {
               const key = article.link || `article-${idx}`;
               const expanded = expandedContent[article.link] || null;
               return (
-                <li key={key} style={{ display: 'flex', gap: 12, padding: 12, borderBottom: '1px solid #444' }}>
-                  <img src={article.thumbnail || '/images/fallback.png'} alt="thumbnail" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4 }} onError={(e) => (e.currentTarget.src = '/images/fallback.png')} />
-                  <div style={{ flex: 1 }}>
-                    <a href={article.link} target="_blank" rel="noopener noreferrer" style={{ color: '#0f0', fontWeight: 'bold', textDecoration: 'none' }}>{article.title}</a>
-                    <p style={{ marginTop: 4, fontSize: 14, color: '#ccc' }}>{article.description}</p>
-                    <small style={{ fontSize: 12, color: '#888' }}>{new Date(article.pubDate).toLocaleString()} | {article.source}</small>
-                    <button onClick={() => expandArticle(article.link)} style={{ marginRight: 10, marginTop: 6, cursor: 'pointer', background: '#444', border: 'none', color: '#eee', padding: '6px 10px', borderRadius: 4 }}>
-                      {expandedArticle === article.link ? 'Collapse' : 'Expand'}
-                    </button>
-                    {expandedArticle === article.link && !loadingFullArticle && (
-  <>
-    {expandedContent && (
-      <article
-        style={{
-          marginTop: 20,
-          maxWidth: '600px',
-          width: '100%',
-          maxHeight: 400,
-          overflowY: 'auto',
-          backgroundColor: '#111',
-          padding: '20px 25px',
-          borderRadius: 6,
-          color: '#ccc',
-          fontSize: '16px',
-          lineHeight: 1.6,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          boxSizing: 'border-box',
-          fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
-        }}
-        dangerouslySetInnerHTML={{ __html: expandedContent }}
-      />
-    )}
-
-    {expandedTranscript && (
-      <pre
-        style={{
-          marginTop: 10,
-          maxWidth: '600px',
-          width: '100%',
-          maxHeight: 200,
-          overflowY: 'auto',
-          backgroundColor: '#000',
-          padding: 15,
-          borderRadius: 6,
-          color: '#0f0',
-          fontSize: 14,
-          whiteSpace: 'pre-wrap',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          boxSizing: 'border-box',
-          fontFamily: 'monospace',
-        }}
-      >
-        {expandedTranscript}
-      </pre>
-    )}
-  </>
-)}
-                        {expanded.transcript && <pre style={{ marginTop: 10, backgroundColor: '#000', padding: 10, color: '#0f0', fontSize: 12 }}>{expanded.transcript}</pre>}
-                      </>
-                    )}
-                    {loadingFullArticle && expandedArticle === article.link && (
-                      <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
-                    )}
+                <li
+                  key={key}
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    padding: 12,
+                    borderBottom: '1px solid #444',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <img
+                      src={article.thumbnail || '/images/fallback.png'}
+                      alt="thumbnail"
+                      style={{
+                        width: 80,
+                        height: 80,
+                        objectFit: 'cover',
+                        borderRadius: 4,
+                      }}
+                      onError={(e) => (e.currentTarget.src = '/images/fallback.png')}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <a
+                        href={article.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: '#0f0',
+                          fontWeight: 'bold',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        {article.title}
+                      </a>
+                      <p
+                        style={{
+                          marginTop: 4,
+                          fontSize: 12,
+                          color: '#888',
+                        }}
+                      >
+                        {new Date(article.pubDate).toLocaleString()} |{' '}
+                        {article.source || 'Unknown source'}
+                      </p>
+                      <p
+                        style={{
+                          marginTop: 6,
+                          fontSize: 14,
+                          color: '#ccc',
+                        }}
+                      >
+                        {article.description}
+                      </p>
+                      <div
+                        style={{
+                          marginTop: 8,
+                          display: 'flex',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        {article.tags?.map((tag: string) => (
+                          <span
+                            key={tag}
+                            style={{
+                              backgroundColor: '#222',
+                              border: '1px solid #555',
+                              borderRadius: 3,
+                              padding: '2px 6px',
+                              fontSize: 11,
+                              color: '#0f0',
+                              cursor: 'default',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => expandArticle(article.link)}
+                        style={{
+                          marginTop: 10,
+                          backgroundColor: '#111',
+                          color: '#0f0',
+                          border: '1px solid #0f0',
+                          padding: '6px 12px',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {expandedArticle === article.link ? 'Collapse' : 'Read More'}
+                      </button>
+                      {expandedArticle === article.link && (
+                        <div
+                          style={{
+                            marginTop: 12,
+                            backgroundColor: '#111',
+                            padding: 16,
+                            borderRadius: 6,
+                            color: '#ccc',
+                            maxWidth: '100%',
+                            overflowWrap: 'break-word',
+                          }}
+                        >
+                          {loadingFullArticle && !expanded ? (
+                            <p>Loading full article...</p>
+                          ) : expanded ? (
+                            <>
+                              <div
+                                dangerouslySetInnerHTML={{ __html: expanded.content }}
+                                style={{ marginBottom: 12 }}
+                              />
+                              {Object.values(expanded.audioSources).some(Boolean) && (
+                                <AudioPlayer audioSources={expanded.audioSources} />
+                              )}
+                              {expanded.transcript && (
+                                <details style={{ marginTop: 12 }}>
+                                  <summary style={{ cursor: 'pointer' }}>
+                                    Show Transcript
+                                  </summary>
+                                  <pre
+                                    style={{
+                                      whiteSpace: 'pre-wrap',
+                                      marginTop: 8,
+                                      fontSize: 13,
+                                      backgroundColor: '#222',
+                                      padding: 8,
+                                      borderRadius: 4,
+                                      maxHeight: 200,
+                                      overflowY: 'auto',
+                                      color: '#ccc',
+                                    }}
+                                  >
+                                    {expanded.transcript}
+                                  </pre>
+                                </details>
+                              )}
+                            </>
+                          ) : (
+                            <p>No full article content available.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </li>
               );
             })}
           </ul>
           {visibleCount < filteredArticlesSorted.length && (
-            <button onClick={() => setVisibleCount((v) => v + 10)} style={{ marginTop: 12, padding: '8px 16px', borderRadius: 4, border: 'none', backgroundColor: '#0f0', color: '#000', cursor: 'pointer' }} disabled={loading}>
+            <button
+              onClick={() => setVisibleCount((c) => c + 10)}
+              style={{
+                marginTop: 16,
+                padding: '8px 16px',
+                backgroundColor: '#0f0',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                color: '#000',
+              }}
+            >
               Load More
             </button>
           )}
         </section>
         {showSecret && (
-          <section style={{ position: 'fixed', bottom: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.8)', color: '#0f0', padding: 10, borderRadius: 6, zIndex: 9999, maxWidth: 320, fontSize: 12, fontFamily: 'monospace' }}>
-            <strong>Secret activated:</strong> The Powers That Be
+          <section
+            style={{
+              marginTop: 32,
+              backgroundColor: '#222',
+              padding: 16,
+              borderRadius: 6,
+              textAlign: 'center',
+              color: '#0f0',
+              fontWeight: 'bold',
+              fontSize: 16,
+            }}
+          >
+            Secret mode activated: The powers that be.
           </section>
         )}
       </main>
