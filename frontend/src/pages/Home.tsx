@@ -201,12 +201,12 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
             {visibleArticles.map((article) => (
   <li key={article.link} style={styles.articleItem}>
     <img
-      src={article.thumbnail || '/images/fallback.png'}
-      alt={${article.source || 'News'} logo}
-      onError={(e) => {
-        e.currentTarget.onerror = null;
-        e.currentTarget.src = '/images/fallback.png';
-      }}
+  src={article.thumbnail || '/images/fallback.png'}
+  alt={`${article.source || 'News'} logo`}
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = '/images/fallback.png';
+  }}
       style={styles.thumbnail}
     />
     <div style={styles.articleContent}>
