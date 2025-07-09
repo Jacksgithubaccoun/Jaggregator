@@ -206,7 +206,8 @@ const Home: React.FC = () => {
   return (
     <>
       <MatrixRain />
-      <main style={styles.container}>
+      <main style={styles.container     position: 'relative',  // Needed for z-index to work on this container
+    zIndex: 10,}>
         <h1 style={styles.title}>Jaggregator</h1>
 
         <FeedsManager
