@@ -17,15 +17,12 @@ const Home: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(10);
 
-  // Secret trigger state
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
 
-  // Full article reader state
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string>('');
 
-  // Secret phrase listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setTypedKeys((prev) => {
@@ -42,27 +39,26 @@ const Home: React.FC = () => {
   }, []);
 
   const addFeed = async (url: string): Promise<void> => {
-  if (feeds.includes(url)) return;
-  setLoading(true);
-  setError('');
-  try {
-    const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-    if (!res.ok) throw new Error('Failed to fetch feed articles');
-    const data = await res.json();
+    if (feeds.includes(url)) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error('Failed to fetch feed articles');
+      const data = await res.json();
 
-    // Filter out articles already in state (based on unique link)
-    const newArticles = data.articles.filter(
-      (newArticle: any) => !articles.some((a) => a.link === newArticle.link)
-    );
+      const newArticles = data.articles.filter(
+        (newArticle: any) => !articles.some((a) => a.link === newArticle.link)
+      );
 
-    setFeeds((prev) => [...prev, url]);
-    setArticles((prev) => [...prev, ...newArticles]);
-  } catch (err) {
-    setError('Failed to add feed.');
-  } finally {
-    setLoading(false);
-  }
-};
+      setFeeds((prev) => [...prev, url]);
+      setArticles((prev) => [...prev, ...newArticles]);
+    } catch {
+      setError('Failed to add feed.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
@@ -77,30 +73,32 @@ const Home: React.FC = () => {
       try {
         const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
         setFeeds(savedFeeds);
-       const articlesArrays = await Promise.all(
-  savedFeeds.map(async (url) => {
-    try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.articles || [];
-    } catch {
-      return [];
-    }
-  })
-);
 
-// Flatten and filter duplicates by link
-const allArticles = articlesArrays.flat();
-const uniqueArticles = allArticles.filter(
-  (article, index, self) => index === self.findIndex((a) => a.link === article.link)
-);
+        const articlesArrays = await Promise.all(
+          savedFeeds.map(async (url) => {
+            try {
+              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+              if (!res.ok) return [];
+              const data = await res.json();
+              return data.articles || [];
+            } catch {
+              return [];
+            }
+          })
+        );
 
-setArticles(uniqueArticles);
+        const allArticles = articlesArrays.flat();
+        const uniqueArticles = allArticles.filter(
+          (article, index, self) =>
+            index === self.findIndex((a) => a.link === article.link)
+        );
+
+        setArticles(uniqueArticles);
       } catch {
         setError('Failed to fetch articles from saved feeds.');
       }
     };
+
     loadFeeds();
   }, []);
 
@@ -114,20 +112,18 @@ setArticles(uniqueArticles);
     );
   };
 
-  const filteredArticles = Array.isArray(articles)
-    ? articles.filter((article) => {
-        const matchesTags =
-          selectedTags.length === 0 ||
-          article.tags?.some((tag: string) => selectedTags.includes(tag));
-        const matchesSearch =
-          article.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          article.description?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesSource =
-          !sourceFilter.trim() ||
-          article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
-        return matchesTags && matchesSearch && matchesSource;
-      })
-    : [];
+  const filteredArticles = articles.filter((article) => {
+    const matchesTags =
+      selectedTags.length === 0 ||
+      article.tags?.some((tag: string) => selectedTags.includes(tag));
+    const matchesSearch =
+      article.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      article.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSource =
+      !sourceFilter.trim() ||
+      article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
+    return matchesTags && matchesSearch && matchesSource;
+  });
 
   const filteredArticlesSorted = filteredArticles.sort(
     (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
@@ -135,7 +131,6 @@ setArticles(uniqueArticles);
 
   const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
-  // Load full article content when expandedArticle changes
   useEffect(() => {
     if (!expandedArticle) {
       setExpandedContent('');
@@ -143,12 +138,10 @@ setArticles(uniqueArticles);
       return;
     }
 
-    // Find the selected article
     const selected = articles.find((a) => a.link === expandedArticle);
 
-    // If it has audioUrl, no need to fetch full article, just clear content since audio controls will show
     if (selected?.audioUrl) {
-      setExpandedContent(''); // no HTML content needed, audio player will render
+      setExpandedContent('');
       setLoadingFullArticle(false);
       return;
     }
@@ -160,8 +153,7 @@ setArticles(uniqueArticles);
         if (!res.ok) throw new Error('Failed to load full article');
         const data = await res.json();
         setExpandedContent(data.content || 'No content available.');
-      } catch (err) {
-        console.error(err);
+      } catch {
         setExpandedContent('Failed to load full article.');
       } finally {
         setLoadingFullArticle(false);
@@ -174,16 +166,7 @@ setArticles(uniqueArticles);
   return (
     <>
       <MatrixRain />
-      <main
-        style={{
-          ...styles.container,
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-          borderRadius: 12,
-          padding: 30,
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
+      <main style={styles.container}>
         <h1 style={styles.title}>Jaggregator</h1>
 
         <FeedsManager
@@ -242,161 +225,121 @@ setArticles(uniqueArticles);
           {filteredArticles.length === 0 && !loading && !error && (
             <p style={styles.statusText}>No articles found.</p>
           )}
-       <ul style={styles.articleList}>
-  {visibleArticles.map((article, idx) => {
-    // Use article.link if available, otherwise fallback to index
-    const key = article.link || `article-${idx}`;
+          <ul style={styles.articleList}>
+            {visibleArticles.map((article, idx) => {
+              const key = article.link || `article-${idx}`;
+              return (
+                <li key={key} style={styles.articleItem}>
+                  <img
+                    src={article.thumbnail || '/images/fallback.png'}
+                    alt={`${article.source || 'News'} logo`}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/fallback.png';
+                    }}
+                    style={styles.thumbnail}
+                  />
+                  <div style={styles.articleContent}>
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.articleTitle}
+                    >
+                      {article.title}
+                    </a>
+                    <p style={styles.articleDescription}>{article.description}</p>
+                    <small style={styles.articleMeta}>
+                      {new Date(article.pubDate).toLocaleString()} | {article.source}
+                    </small>
 
-    // Debug logs — remove or comment out after testing
-    console.log('Rendering article:', key, 'Expanded article:', expandedArticle);
-
-    return (
-      <li key={key} style={styles.articleItem}>
-        <img
-          src={article.thumbnail || '/images/fallback.png'}
-          alt={`${article.source || 'News'} logo`}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = '/images/fallback.png';
-          }}
-          style={styles.thumbnail}
-        />
-        <div style={styles.articleContent}>
-          <a
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.articleTitle}
-          >
-            {article.title}
-          </a>
-          <p style={styles.articleDescription}>{article.description}</p>
-          <small style={styles.articleMeta}>
-            {new Date(article.pubDate).toLocaleString()} | {article.source}
-          </small>
-
-                 {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
-  <audio controls style={{ width: '100%' }} preload="metadata" key={article.link + '-audio'}>
-    {article.audioUrlMp3 && (
-      <source src={article.audioUrlMp3} type="audio/mpeg" />
-    )}
-    {article.audioUrlOgg && (
-      <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />
-    )}
-    {article.audioUrlWebm && (
-      <source src={article.audioUrlWebm} type="audio/webm; codecs=opus" />
-    )}
-    {/* Generic audioUrl fallback - try guessing type based on extension */}
-    {article.audioUrl && !article.audioUrlMp3 && !article.audioUrlOgg && !article.audioUrlWebm && (
-      <>
-        {article.audioUrl.endsWith('.mp3') && (
-          <source src={article.audioUrl} type="audio/mpeg" />
-        )}
-        {article.audioUrl.endsWith('.ogg') && (
-          <source src={article.audioUrl} type="audio/ogg; codecs=opus" />
-        )}
-        {article.audioUrl.endsWith('.webm') && (
-          <source src={article.audioUrl} type="audio/webm; codecs=opus" />
-        )}
-        {/* Fallback without type if extension is unknown */}
-        {!article.audioUrl.match(/\.(mp3|ogg|webm)$/i) && (
-          <source src={article.audioUrl} />
-        )}
-      </>
-    )}
-    Your browser does not support the audio element.
-  </audio>
-) : (
-  loadingFullArticle ? <p>Loading full article...</p> :
-  <div dangerouslySetInnerHTML={{ __html: expandedContent }} />
-)}
-
-                  {/* Read here button */}
-                  <button
-                    onClick={() => {
-                      if (expandedArticle === article.link) {
-                        setExpandedArticle(null);
-                      } else {
-                        setExpandedArticle(article.link);
+                    <button
+                      onClick={() =>
+                        setExpandedArticle(
+                          expandedArticle === article.link ? null : article.link
+                        )
                       }
-                    }}
-                    style={{
-                      marginRight: 10,
-                      border: '1px solid #0f0',
-                      backgroundColor: 'transparent',
-                      color: '#0f0',
-                      borderRadius: 6,
-                      padding: '5px 10px',
-                      fontSize: 14,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {expandedArticle === article.link ? 'Hide' : 'Read here'}
-                  </button>
+                      style={{
+                        marginRight: 10,
+                        border: '1px solid #0f0',
+                        backgroundColor: 'transparent',
+                        color: '#0f0',
+                        borderRadius: 6,
+                        padding: '5px 10px',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {expandedArticle === article.link ? 'Hide' : 'Read here'}
+                    </button>
 
-                  {/* Visit source button */}
-                  <a
-                    href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      border: '1px solid #0070f3',
-                      color: '#0070f3',
-                      padding: '5px 10px',
-                      borderRadius: 6,
-                      textDecoration: 'none',
-                      fontSize: 14,
-                    }}
-                  >
-                    Visit source
-                  </a>
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        border: '1px solid #0070f3',
+                        color: '#0070f3',
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        textDecoration: 'none',
+                        fontSize: 14,
+                      }}
+                    >
+                      Visit source
+                    </a>
 
-                 {/* Expanded Reader */}
-{expandedArticle === article.link && (
-  <div
-    style={{
-      marginTop: 20,
-      backgroundColor: '#111',
-      padding: 15,
-      borderRadius: 8,
-      border: '1px solid #333',
-      maxWidth: '100%',
-      overflowX: 'auto',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-    }}
-  >
-    {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
-      <audio controls style={{ width: '100%' }} key={article.link}>
-        {article.audioUrl && <source src={article.audioUrl} type="audio/mpeg" />}
-        {article.audioUrlMp3 && <source src={article.audioUrlMp3} type="audio/mpeg" />}
-        {article.audioUrlOgg && <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />}
-        {article.audioUrlWebm && <source src={article.audioUrlWebm} type="audio/webm" />}
-        Your browser does not support the audio element.
-      </audio>
-    ) : loadingFullArticle ? (
-      <p>Loading full article...</p>
-    ) : (
-      <div dangerouslySetInnerHTML={{ __html: expandedContent }}</div>
-    )}
-  </div>
-)}
+                    {expandedArticle === article.link && (
+                      <div
+                        style={{
+                          marginTop: 20,
+                          backgroundColor: '#111',
+                          padding: 15,
+                          borderRadius: 8,
+                          border: '1px solid #333',
+                          maxWidth: '100%',
+                          overflowX: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
+                          <audio controls style={{ width: '100%' }}>
+                            {article.audioUrlMp3 && (
+                              <source src={article.audioUrlMp3} type="audio/mpeg" />
+                            )}
+                            {article.audioUrlOgg && (
+                              <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />
+                            )}
+                            {article.audioUrlWebm && (
+                              <source src={article.audioUrlWebm} type="audio/webm" />
+                            )}
+                            {article.audioUrl && !article.audioUrl.match(/\.(mp3|ogg|webm)$/i) && (
+                              <source src={article.audioUrl} />
+                            )}
+                            Your browser does not support the audio element.
+                          </audio>
+                        ) : loadingFullArticle ? (
+                          <p>Loading full article...</p>
+                        ) : (
+                          <div dangerouslySetInnerHTML={{ __html: expandedContent }} />
+                        )}
+                      </div>
+                    )}
 
-
-                  {/* Tags */}
-                  <div style={styles.articleTags}>
-                    {article.tags?.map((tag: string) => (
-                      <span key={tag} style={styles.articleTag}>
-                        {tag}
-                      </span>
-                    ))}
+                    <div style={styles.articleTags}>
+                      {article.tags?.map((tag: string) => (
+                        <span key={tag} style={styles.articleTag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
 
-          {/* Show more button */}
           {visibleCount < filteredArticles.length && (
             <button
               onClick={() => setVisibleCount((c) => c + 10)}
@@ -417,7 +360,6 @@ setArticles(uniqueArticles);
           )}
         </section>
 
-        {/* Secret content */}
         {showSecret && (
           <section
             aria-label="Secret Content"
@@ -431,15 +373,14 @@ setArticles(uniqueArticles);
             }}
           >
             <h2>Secret Content Unlocked!</h2>
-            <p>
-              You found the secret phrase! Here's your hidden content.
-            </p>
+            <p>You found the secret phrase! Here's your hidden content.</p>
           </section>
         )}
       </main>
     </>
   );
 };
+
 const styles = {
   container: {
     maxWidth: '1000px',
@@ -449,12 +390,11 @@ const styles = {
     fontFamily: "'Consolas', monospace",
     overflowWrap: 'anywhere' as const,
     wordBreak: 'break-word' as const,
-  },
-  articleContent: {
-    whiteSpace: 'pre-wrap' as const,
-    wordBreak: 'break-word' as const,
-    overflowX: 'auto' as const,
-    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    borderRadius: 12,
+    padding: 30,
+    position: 'relative' as const,
+    zIndex: 1,
   },
   title: {
     fontSize: 48,
@@ -525,6 +465,12 @@ const styles = {
     borderRadius: 8,
     flexShrink: 0,
   },
+  articleContent: {
+    whiteSpace: 'pre-wrap' as const,
+    wordBreak: 'break-word' as const,
+    overflowX: 'auto' as const,
+    flex: 1,
+  },
   articleTitle: {
     fontSize: 20,
     fontWeight: 'bold' as const,
@@ -553,4 +499,4 @@ const styles = {
   },
 };
 
-export default Home; 
+export default Home;
