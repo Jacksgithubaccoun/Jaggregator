@@ -85,10 +85,10 @@ function AudioPlayer({
           onCanPlay={handleCanPlay}
           onError={handleError}
         >
-          {audioUrlMp3 && <source src={proxyUrl(audioUrlMp3)!} type="audio/mpeg" />}
-          {audioUrlOgg && <source src={proxyUrl(audioUrlOgg)!} type="audio/ogg; codecs=opus" />}
-          {audioUrlWebm && <source src={proxyUrl(audioUrlWebm)!} type="audio/webm" />}
-          {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={proxyUrl(audioUrl)!} />}
+          {audioUrlMp3 && <source src={(audioUrlMp3)!} type="audio/mpeg" />}
+          {audioUrlOgg && <source src={(audioUrlOgg)!} type="audio/ogg; codecs=opus" />}
+          {audioUrlWebm && <source src={(audioUrlWebm)!} type="audio/webm" />}
+          {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={(audioUrl)!} />}
           Your browser does not support the audio element.
         </audio>
 
