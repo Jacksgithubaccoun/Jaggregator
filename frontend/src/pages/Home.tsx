@@ -394,7 +394,7 @@ const Home: React.FC = () => {
 
 const styles = {
   container: {
-    maxWidth: 1000,
+    maxWidth: 100%,
     margin: 'auto',
     color: '#eee',
     fontFamily: "'Consolas', monospace",
