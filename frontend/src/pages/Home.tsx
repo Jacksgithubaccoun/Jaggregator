@@ -203,23 +203,28 @@ const Home: React.FC = () => {
     fetchFullArticle();
   }, [expandedArticle, articles]);
 
-  return (
   <>
-    <MatrixRain />
+  <MatrixRain />
 
-    {/* Black semi-transparent background layer */}
-    <div style={{
+  {/* Opaque dark background for readability */}
+  <div
+    style={{
       position: 'fixed',
       top: 0,
       left: 0,
       width: '100vw',
       height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.75)', // Adjust opacity here
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
       zIndex: 5,
-    }} />
+    }}
+  />
 
-    {/* Main UI */}
-    <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
+  {/* UI content above the dark layer */}
+  <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
+    <h1 style={styles.title}>Jaggregator</h1>
+    {/* rest of your UI as-is */}
+  </main>
+</>
 
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
