@@ -17,6 +17,10 @@ const Home: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(10);
 
+  // For expanded article content loading
+  const [loadingFullArticle, setLoadingFullArticle] = useState(false);
+  const [expandedContent, setExpandedContent] = useState<string>('');
+
   // Secret trigger state
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
@@ -37,80 +41,54 @@ const Home: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-const addFeed = async (url: string): Promise<void> => {
-  if (feeds.includes(url)) return;
-  setLoading(true);
-  setError('');
-  try {
-    const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-    if (!res.ok) throw new Error('Failed to fetch feed articles');
-    const data = await res.json();
-    setFeeds((prev) => [...prev, url]);
-    setArticles((prev) => [...prev, ...data.articles]);
-  } catch (err) {
-    setError('Failed to add feed.');
-  } finally {
-    setLoading(false);
-  }
-};
+  const addFeed = async (url: string): Promise<void> => {
+    if (feeds.includes(url)) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error('Failed to fetch feed articles');
+      const data = await res.json();
+      setFeeds((prev) => [...prev, url]);
+      setArticles((prev) => [...prev, ...data.articles]);
+    } catch {
+      setError('Failed to add feed.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
     setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
   };
 
- const clearError = () => setError('');
+  const clearError = () => setError('');
 
-useEffect(() => {
-  const loadFeeds = async () => {
-    try {
-      const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
-      setFeeds(savedFeeds);
-      const articlesArrays = await Promise.all(
-        savedFeeds.map(async (url) => {
-          try {
-            const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-            if (!res.ok) return [];
-            const data = await res.json();
-            return data.articles || [];
-          } catch {
-            return [];
-          }
-        })
-      );
-      setArticles(articlesArrays.flat());
-    } catch {
-      setError('Failed to fetch articles from saved feeds.');
-    }
-  };
-  loadFeeds();
-}, []);
-
-useEffect(() => {
-  localStorage.setItem('feeds', JSON.stringify(feeds));
-}, [feeds]);
-
-const toggleTag = (tag: string) => {
-  setSelectedTags((prev) =>
-    prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-  );
-};
-
-const filteredArticles = Array.isArray(articles)
-  ? articles.filter((article) => {
-      const matchesTags =
-        selectedTags.length === 0 ||
-        article.tags?.some((tag: string) => selectedTags.includes(tag));
-      const matchesSearch =
-        article.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSource =
-        !sourceFilter.trim() ||
-        article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
-      return matchesTags && matchesSearch && matchesSource;
-    })
-  : [];
-
+  useEffect(() => {
+    const loadFeeds = async () => {
+      try {
+        const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
+        setFeeds(savedFeeds);
+        const articlesArrays = await Promise.all(
+          savedFeeds.map(async (url) => {
+            try {
+              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+              if (!res.ok) return [];
+              const data = await res.json();
+              return data.articles || [];
+            } catch {
+              return [];
+            }
+          })
+        );
+        setArticles(articlesArrays.flat());
+      } catch {
+        setError('Failed to fetch articles from saved feeds.');
+      }
+    };
+    loadFeeds();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('feeds', JSON.stringify(feeds));
@@ -138,10 +116,10 @@ const filteredArticles = Array.isArray(articles)
     : [];
 
   const filteredArticlesSorted = filteredArticles.sort(
-  (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-);
+    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+  );
 
-const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
+  const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
   return (
     <>
@@ -214,115 +192,124 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
           {filteredArticles.length === 0 && !loading && !error && (
             <p style={styles.statusText}>No articles found.</p>
           )}
-         <ul style={styles.articleList}>
-  {visibleArticles.map((article) => (
-    <li key={article.link} style={styles.articleItem}>
-      <img
-        src={article.thumbnail || '/images/fallback.png'}
-        alt={`${article.source || 'News'} logo`}
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = '/images/fallback.png';
-        }}
-        style={styles.thumbnail}
-      />
-      <div style={styles.articleContent}>
-        <a
-          href={article.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={styles.articleTitle}
-        >
-          {article.title}
-        </a>
-        <p style={styles.articleDescription}>{article.description}</p>
-        <small style={styles.articleMeta}>
-          {new Date(article.pubDate).toLocaleString()} | {article.source}
-        </small>
+          <ul style={styles.articleList}>
+            {visibleArticles.map((article) => (
+              <li key={article.link} style={styles.articleItem}>
+                <img
+                  src={article.thumbnail || '/images/fallback.png'}
+                  alt={`${article.source || 'News'} logo`}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/images/fallback.png';
+                  }}
+                  style={styles.thumbnail}
+                />
+                <div style={styles.articleContent}>
+                  <a
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.articleTitle}
+                  >
+                    {article.title}
+                  </a>
+                  <p style={styles.articleDescription}>{article.description}</p>
+                  <small style={styles.articleMeta}>
+                    {new Date(article.pubDate).toLocaleString()} | {article.source}
+                  </small>
 
-        {/* Audio player */}
-        {article.audioUrl && (
-          <audio controls style={{ width: '100%', marginTop: 10 }}>
-            <source src={article.audioUrl} type="audio/mpeg" />
-            Your browser does not support the audio element.
-          </audio>
-        )}
+                  {/* Audio player */}
+                  {article.audioUrl && (
+                    <audio controls style={{ width: '100%', marginTop: 10 }}>
+                      <source src={article.audioUrl} type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  )}
 
-        {/* Read here button */}
-       <button
-  onClick={() => {
-    if (expandedArticle === article.link) {
-      setExpandedArticle(null);
-    } else {
-      setExpandedArticle(article.link);
-    }
-  }}
-  style={{
-    marginRight: 10,
-    border: '1px solid #0f0',
-    backgroundColor: 'transparent',
-    color: '#0f0',
-    borderRadius: 6,
-    padding: '5px 10px',
-    fontSize: 14,
-    cursor: 'pointer',
-  }}
->
-  {expandedArticle === article.link ? 'Hide' : 'Read here'}
-</button>
+                  {/* Read here button */}
+                  <button
+                    onClick={() => {
+                      if (expandedArticle === article.link) {
+                        setExpandedArticle(null);
+                        setExpandedContent('');
+                      } else {
+                        setExpandedArticle(article.link);
+                        // You might want to load full content here asynchronously
+                        setLoadingFullArticle(true);
+                        // Simulate loading full article content:
+                        setTimeout(() => {
+                          setExpandedContent(
+                            `<p>Full article content for: <strong>${article.title}</strong></p>`
+                          );
+                          setLoadingFullArticle(false);
+                        }, 1000);
+                      }
+                    }}
+                    style={{
+                      marginRight: 10,
+                      border: '1px solid #0f0',
+                      backgroundColor: 'transparent',
+                      color: '#0f0',
+                      borderRadius: 6,
+                      padding: '5px 10px',
+                      fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {expandedArticle === article.link ? 'Hide' : 'Read here'}
+                  </button>
 
-        {/* Visit source button */}
-        <a
-          href={article.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            border: '1px solid #0070f3',
-            color: '#0070f3',
-            padding: '5px 10px',
-            borderRadius: 6,
-            textDecoration: 'none',
-            fontSize: 14,
-          }}
-        >
-          Visit source
-        </a>
+                  {/* Visit source button */}
+                  <a
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      border: '1px solid #0070f3',
+                      color: '#0070f3',
+                      padding: '5px 10px',
+                      borderRadius: 6,
+                      textDecoration: 'none',
+                      fontSize: 14,
+                    }}
+                  >
+                    Visit source
+                  </a>
 
-        {/* Expanded Reader */}
-{expandedArticle === article.link && (
-  <div
-    style={{
-      marginTop: 20,
-      backgroundColor: '#111',
-      padding: 15,
-      borderRadius: 8,
-      border: '1px solid #333',
-    }}
-  >
-    {loadingFullArticle ? (
-      <p>Loading full article...</p>
-    ) : (
-      <div
-        dangerouslySetInnerHTML={{ __html: expandedContent }}
-        style={{ color: '#ccc', lineHeight: 1.6 }}
-      />
-    )}
-  </div>
-)}
-       
+                  {/* Expanded Reader */}
+                  {expandedArticle === article.link && (
+                    <div
+                      style={{
+                        marginTop: 20,
+                        backgroundColor: '#111',
+                        padding: 15,
+                        borderRadius: 8,
+                        border: '1px solid #333',
+                      }}
+                    >
+                      {loadingFullArticle ? (
+                        <p>Loading full article...</p>
+                      ) : (
+                        <div
+                          dangerouslySetInnerHTML={{ __html: expandedContent }}
+                          style={{ color: '#ccc', lineHeight: 1.6 }}
+                        />
+                      )}
+                    </div>
+                  )}
 
-        {/* Tags */}
-        <div style={styles.articleTags}>
-          {article.tags?.map((tag: string) => (
-            <span key={tag} style={styles.tag}>
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-    </li>
-  ))}
-</ul>
+                  {/* Tags */}
+                  <div style={styles.articleTags}>
+                    {article.tags?.map((tag: string) => (
+                      <span key={tag} style={styles.tag}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
 
           {visibleCount < filteredArticles.length && (
             <button
@@ -333,7 +320,7 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
                 cursor: 'pointer',
                 borderRadius: 6,
                 border: '1px solid #0f0',
-                backgroundColor: '000',
+                backgroundColor: '#000',
                 color: '#0f0',
                 fontFamily: "'Courier New', Courier, monospace",
               }}
@@ -342,6 +329,7 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
             </button>
           )}
         </section>
+
         {/* Secret Button */}
         {showSecret && (
           <a
@@ -453,20 +441,5 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 5,
     fontSize: 12,
     color: '#999',
-  },
-  articleTags: {
-    marginTop: 6,
-    display: 'flex',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  tag: {
-    fontSize: 12,
-    background: '#333',
-    color: '#0f0',
-    borderRadius: 12,
-    padding: '2px 8px',
-  },
-};
+ 
 
-export default Home;
