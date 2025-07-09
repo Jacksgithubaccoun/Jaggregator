@@ -231,36 +231,41 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
         </audio>
       )}
 
-      {/* Quick View Toggle */}
-      <div style={{ marginTop: 10 }}>
-        <button
-          onClick={async () => {
-            if (expandedArticle === article.link) {
-              setExpandedArticle(null);
-              setExpandedContent('');
-              return;
-            }
-            setExpandedArticle(article.link);
-            setLoadingFullArticle(true);
-            const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(article.link)}`);
-const data = await res.json();
-            });
-            const data = await res.json();
-            setExpandedContent(data.content || '<p>Failed to load content</p>');
-            setExpandedArticle(article.link);
-            setLoadingFullArticle(false);
-          }}
-          style={{
-            marginRight: 10,
-            border: '1px solid #0f0',
-            backgroundColor: 'transparent',
-            color: '#0f0',
-            borderRadius: 6,
-            padding: '5px 10px',
-            fontSize: 14,
-            cursor: 'pointer',
-          }}
-        >
+     <button
+  onClick={async () => {
+    if (expandedArticle === article.link) {
+      setExpandedArticle(null);
+      setExpandedContent('');
+      return;
+    }
+
+    setExpandedArticle(article.link);
+    setLoadingFullArticle(true);
+
+    try {
+      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(article.link)}`);
+      const data = await res.json();
+      setExpandedContent(data.content || '<p>Failed to load content</p>');
+    } catch (error) {
+      setExpandedContent('<p>Failed to load content</p>');
+    } finally {
+      setLoadingFullArticle(false);
+    }
+  }}
+  style={{
+    marginRight: 10,
+    border: '1px solid #0f0',
+    backgroundColor: 'transparent',
+    color: '#0f0',
+    borderRadius: 6,
+    padding: '5px 10px',
+    fontSize: 14,
+    cursor: 'pointer',
+  }}
+>
+  {/* Button label here */}
+</button>
+
           {expandedArticle === article.link ? 'Hide' : 'Read here'}
         </button>
 
