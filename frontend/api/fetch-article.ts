@@ -23,6 +23,7 @@ function isValidHttpUrl(urlString: string) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { url } = req.query;
+
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'Missing URL' });
   }
@@ -44,8 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (audioUrl) {
           return {
             title: item.title || 'No title',
-            content: `<audio controls src="${audioUrl}"></audio>`,
-            audioUrl,
+            content: '', // avoid loading audio in content to keep it lazy
+            audioUrl: `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`, // proxy instead of direct load
             transcript,
             link: item.link || '',
             pubDate: item.pubDate || '',
@@ -119,4 +120,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
   }
 }
-
