@@ -274,7 +274,6 @@ const Home: React.FC = () => {
     Loading articles...
   </p>
 )}
-        )}
         {!loading && error && (
           <p
             style={{
