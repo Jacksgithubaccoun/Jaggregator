@@ -61,25 +61,22 @@ const Home: React.FC = () => {
 
   const addFeed = async (url: string): Promise<void> => {
     if (feeds.includes(url)) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-      if (!res.ok) throw new Error('Failed to fetch feed articles');
-      const data = await res.json();
-
-      const newArticles = data.articles.filter(
-        (newArticle: any) => !articles.some((a) => a.link === newArticle.link)
-      );
-
-      setFeeds((prev) => [...prev, url]);
-      setArticles((prev) => [...prev, ...newArticles]);
-    } catch {
-      setError('Failed to add feed.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setLoadingFullArticle(true);
+  try {
+    const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+    if (!res.ok) throw new Error('Failed to load full article');
+    const data = await res.json();
+    setExpandedContent(data.content || 'No content available.');
+    setExpandedTranscript(data.transcript || '');
+    setExpandedAudioSources(data.audioSources || {});
+  } catch {
+    setExpandedContent('Failed to load full article.');
+    setExpandedTranscript('');
+    setExpandedAudioSources({});
+  } finally {
+    setLoadingFullArticle(false);
+  }
+};
 
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
