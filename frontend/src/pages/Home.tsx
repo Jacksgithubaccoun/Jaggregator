@@ -305,19 +305,20 @@ const Home: React.FC = () => {
 
                   {/* Expanded Reader */}
                   {expandedArticle === article.link && (
-                    <div style={{
-  marginTop: 20,
-  backgroundColor: '#111',
-  padding: 15,
-  borderRadius: 8,
-  border: '1px solid #333',
-  maxWidth: '100%',          // Limit width to container/viewport
-  overflowWrap: 'break-word', // Break long words/URLs instead of overflow
-  wordBreak: 'break-word',    // Ensure text wraps nicely
-  whiteSpace: 'normal',       // Allow normal wrapping of text
-  overflowX: 'auto',          // Scroll only if absolutely necessary horizontally
-}}> </div>
-
+                    <div
+                      style={{
+                        marginTop: 20,
+                        backgroundColor: '#111',
+                        padding: 15,
+                        borderRadius: 8,
+                        border: '1px solid #333',
+                        maxWidth: '100%',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
+                        overflowX: 'auto',
+                      }}
+                    >
                       {article.audioUrl ? (
                         <audio controls style={{ width: '100%' }} key={article.audioUrl}>
                           <source src={article.audioUrl} type="audio/mpeg" />
@@ -336,7 +337,7 @@ const Home: React.FC = () => {
                   {/* Tags */}
                   <div style={styles.articleTags}>
                     {article.tags?.map((tag: string) => (
-                      <span key={tag} style={styles.tag}>
+                      <span key={tag} style={styles.articleTag}>
                         {tag}
                       </span>
                     ))}
@@ -346,42 +347,44 @@ const Home: React.FC = () => {
             ))}
           </ul>
 
+          {/* Show more button */}
           {visibleCount < filteredArticles.length && (
             <button
-              onClick={() => setVisibleCount((count) => count + 10)}
+              onClick={() => setVisibleCount((c) => c + 10)}
               style={{
                 marginTop: 20,
-                display: 'block',
-                width: '100%',
-                padding: 10,
-                backgroundColor: '#0070f3',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
+                padding: '10px 20px',
                 fontSize: 16,
+                cursor: 'pointer',
+                borderRadius: 8,
+                border: '1px solid #0f0',
+                backgroundColor: 'transparent',
+                color: '#0f0',
               }}
+              aria-label="Show more articles"
             >
-              Load more articles
+              Show more
             </button>
           )}
         </section>
 
-        {/* Secret Easter Egg */}
+        {/* Secret content */}
         {showSecret && (
           <section
-            aria-label="Secret Easter Egg"
+            aria-label="Secret Content"
             style={{
               marginTop: 40,
               padding: 20,
-              backgroundColor: '#111',
-              borderRadius: 12,
+              backgroundColor: '#222',
+              borderRadius: 10,
+              border: '2px solid #0f0',
               color: '#0f0',
-              textAlign: 'center',
-              fontSize: 18,
             }}
           >
-            <p>You found the secret: The Powers That Be!</p>
+            <h2>Secret Content Unlocked!</h2>
+            <p>
+              You found the secret phrase! Here's your hidden content.
+            </p>
           </section>
         )}
       </main>
@@ -389,53 +392,59 @@ const Home: React.FC = () => {
   );
 };
 
-const styles: Record<string, React.CSSProperties> = {
+const styles = {
   container: {
-    position: 'relative',
-    zIndex: 1,
-    maxWidth: 900,
-    margin: '0 auto',
-    padding: 20,
-    fontFamily: "'Courier New', Courier, monospace",
-    color: '#0f0',
-    minHeight: '100vh',
+    maxWidth: 1000,
+    margin: 'auto',
+    color: '#eee',
+    fontFamily: "'Consolas', monospace",
   },
   title: {
-    textAlign: 'center',
+    fontSize: 48,
+    fontWeight: 'bold' as const,
+    marginBottom: 16,
+    textAlign: 'center' as const,
   },
   controlsContainer: {
-    marginTop: 20,
+    marginBottom: 20,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
   },
   input: {
     width: '100%',
-    padding: 8,
-    fontSize: 16,
-    borderRadius: 4,
-    border: '1px solid #ccc',
-    boxSizing: 'border-box',
+    maxWidth: 400,
+    padding: 10,
+    fontSize: 18,
+    borderRadius: 8,
+    border: '1px solid #555',
+    backgroundColor: '#222',
+    color: '#eee',
   },
   tagsContainer: {
-    marginTop: 20,
+    marginBottom: 20,
     display: 'flex',
-    gap: 10,
-    flexWrap: 'wrap',
     justifyContent: 'center',
+    gap: 12,
+    flexWrap: 'wrap' as const,
   },
   tagButton: {
-    border: '1px solid #ccc',
-    borderRadius: 20,
-    padding: '5px 15px',
-    background: '#000',
+    padding: '6px 12px',
+    borderRadius: 8,
+    backgroundColor: '#333',
+    color: '#ccc',
+    border: 'none',
     cursor: 'pointer',
+    fontSize: 14,
   },
   tagButtonActive: {
-    background: '#0070f3',
-    color: '#fff',
-    borderColor: '#0070f3',
+    backgroundColor: '#0f0',
+    color: '#000',
   },
   statusText: {
+    fontSize: 18,
+    textAlign: 'center' as const,
     marginTop: 20,
-    textAlign: 'center',
   },
   articlesSection: {
     marginTop: 30,
@@ -443,17 +452,19 @@ const styles: Record<string, React.CSSProperties> = {
   articleList: {
     listStyle: 'none',
     padding: 0,
+    margin: 0,
   },
   articleItem: {
+    marginBottom: 30,
+    paddingBottom: 20,
+    borderBottom: '1px solid #444',
     display: 'flex',
-    gap: 15,
-    padding: 15,
-    borderBottom: '1px solid #ddd',
+    gap: 20,
   },
   thumbnail: {
-    width: 60,
-    height: 60,
-    objectFit: 'contain',
+    width: 120,
+    height: 90,
+    objectFit: 'cover' as const,
     borderRadius: 8,
     flexShrink: 0,
   },
@@ -461,50 +472,31 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
   articleTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0070f3',
+    fontSize: 20,
+    fontWeight: 'bold' as const,
+    color: '#0f0',
     textDecoration: 'none',
   },
   articleDescription: {
-    marginTop: 8,
     fontSize: 14,
-    color: '#ccc',
+    color: '#bbb',
+    margin: '8px 0',
   },
   articleMeta: {
-    marginTop: 5,
     fontSize: 12,
-    color: '#999',
+    color: '#555',
   },
   articleTags: {
-    marginTop: 6,
-    display: 'flex',
-    gap: 8,
-    flexWrap: 'wrap',
+    marginTop: 10,
   },
-  tag: {
+  articleTag: {
     fontSize: 12,
-    background: '#333',
-    color: '#0f0',
-    borderRadius: 12,
-    padding: '2px 8px',
-  },
-  expandedArticleContent: {
-    marginTop: 20,
-    backgroundColor: '#111',
-    padding: 15,
-    borderRadius: 8,
-    border: '1px solid #333',
-    color: '#ccc',
-    lineHeight: 1.6,
-    fontSize: 16,
-    maxHeight: '60vh',
-    overflowY: 'auto',
-    whiteSpace: 'normal',
-    wordBreak: 'break-word',
+    backgroundColor: '#333',
+    padding: '2px 6px',
+    borderRadius: 4,
+    marginRight: 6,
+    color: '#aaa',
   },
 };
 
 export default Home;
-
-
