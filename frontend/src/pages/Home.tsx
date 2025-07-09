@@ -231,22 +231,20 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
         </audio>
       )}
 
-     <button
+    <button
   onClick={async () => {
     if (expandedArticle === article.link) {
       setExpandedArticle(null);
       setExpandedContent('');
       return;
     }
-
     setExpandedArticle(article.link);
     setLoadingFullArticle(true);
-
     try {
       const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(article.link)}`);
       const data = await res.json();
       setExpandedContent(data.content || '<p>Failed to load content</p>');
-    } catch (error) {
+    } catch {
       setExpandedContent('<p>Failed to load content</p>');
     } finally {
       setLoadingFullArticle(false);
@@ -263,11 +261,24 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
     cursor: 'pointer',
   }}
 >
-  {/* Button label here */}
+  {expandedArticle === article.link ? (loadingFullArticle ? 'Loading...' : 'Hide') : 'Read here'}
 </button>
 
-          {expandedArticle === article.link ? 'Hide' : 'Read here'}
-        </button>
+<a
+  href={article.link}
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{
+    border: '1px solid #0070f3',
+    color: '#0070f3',
+    padding: '5px 10px',
+    borderRadius: 6,
+    textDecoration: 'none',
+    fontSize: 14,
+  }}
+>
+  Visit source
+</a>
 
         <a
           href={article.link}
