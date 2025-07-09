@@ -26,21 +26,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Choose one audio URL to use in the player (prioritize mp3)
         const audioUrl = audioUrlMp3 || audioUrlOgg || audioUrlWebm;
 
-        if (audioUrl) {
-          // Podcast with audio: return minimal info + audio player embed
-          return {
-            title: item.title || 'No title',
-            content: `<audio controls src="${audioUrl}"></audio>`,
-            audioUrl,
-            link: item.link || '',
-            pubDate: item.pubDate || '',
-            source: feed.title || '',
-            thumbnail: item.itunes?.image || feed.image?.url || '',
-            description: item.contentSnippet || item.summary || '',
-            tags: ['audio'],
-          };
-        }
+       if (audioUrl) {
+  // Try to get transcript from common fields
+  const transcript =
+    item['itunes:summary'] ||
+    item['itunes:subtitle'] ||
+    item.content ||
+    item.contentSnippet ||
+    item.summary ||
+    '';
 
+  return {
+    title: item.title || 'No title',
+    content: '', // no inline player by default
+    audioUrl,
+    transcript, // new field for transcript text
+    link: item.link || '',
+    pubDate: item.pubDate || '',
+    source: feed.title || '',
+    thumbnail: item.itunes?.image || feed.image?.url || '',
+    description: item.contentSnippet || item.summary || '',
+    tags: ['audio'],
+  };
+}
         // Otherwise treat as article and fetch full content
         if (!item.link) return null;
 
