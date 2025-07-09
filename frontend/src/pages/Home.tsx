@@ -59,38 +59,58 @@ const addFeed = async (url: string): Promise<void> => {
     setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
   };
 
-  const clearError = () => setError('');
+ const clearError = () => setError('');
 
-  useEffect(() => {
-    const loadFeeds = async () => {
-  try {
-    const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
-    setFeeds(savedFeeds);
-    const articlesArrays = await Promise.all(
-      savedFeeds.map(async (url) => {
-        try {
-          const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-          if (!res.ok) return [];
-          const data = await res.json();
-          return data.articles || [];
-        } catch {
-          return [];
-        }
-      })
-    );
-    setArticles(articlesArrays.flat());
-  } catch {
-    setError('Failed to fetch articles from saved feeds.');
-  }
+useEffect(() => {
+  const loadFeeds = async () => {
+    try {
+      const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
+      setFeeds(savedFeeds);
+      const articlesArrays = await Promise.all(
+        savedFeeds.map(async (url) => {
+          try {
+            const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.articles || [];
+          } catch {
+            return [];
+          }
+        })
+      );
+      setArticles(articlesArrays.flat());
+    } catch {
+      setError('Failed to fetch articles from saved feeds.');
+    }
+  };
+  loadFeeds();
+}, []);
+
+useEffect(() => {
+  localStorage.setItem('feeds', JSON.stringify(feeds));
+}, [feeds]);
+
+const toggleTag = (tag: string) => {
+  setSelectedTags((prev) =>
+    prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+  );
 };
 
-        setArticles(articlesArrays.flat());
-      } catch {
-        setError('Failed to fetch articles from saved feeds.');
-      }
-    };
-    loadFeeds();
-  }, []);
+const filteredArticles = Array.isArray(articles)
+  ? articles.filter((article) => {
+      const matchesTags =
+        selectedTags.length === 0 ||
+        article.tags?.some((tag: string) => selectedTags.includes(tag));
+      const matchesSearch =
+        article.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSource =
+        !sourceFilter.trim() ||
+        article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
+      return matchesTags && matchesSearch && matchesSource;
+    })
+  : [];
+
 
   useEffect(() => {
     localStorage.setItem('feeds', JSON.stringify(feeds));
