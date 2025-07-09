@@ -112,7 +112,7 @@ function AudioPlayer({
     )}
   </>
 );
-
+}
 
 const Home: React.FC = () => {
   const [feeds, setFeeds] = useState<string[]>([]);
