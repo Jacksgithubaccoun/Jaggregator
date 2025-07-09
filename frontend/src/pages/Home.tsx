@@ -6,165 +6,125 @@ import '../matrix-theme.css';
 
 const allTags = ['audio', 'article', 'left wing', 'right wing', 'alternative'];
 
-type Article = {
-  title: string;
-  link: string;
-  pubDate: string;
-  source: string;
-  description: string;
-  tags?: string[];
-  thumbnail?: string;
-  audioUrl?: string;
-};
-
 const Home: React.FC = () => {
   const [feeds, setFeeds] = useState<string[]>([]);
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loadingFeeds, setLoadingFeeds] = useState(false);
-  const [loadingFullArticle, setLoadingFullArticle] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
+const [expandedContent, setExpandedContent] = useState<string>('');
+const [loadingFullArticle, setLoadingFullArticle] = useState(false);
+  const [error, setError] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(10);
 
-  const [expandedArticleLink, setExpandedArticleLink] = useState<string | null>(null);
-  const [expandedContent, setExpandedContent] = useState<string>('');
-
-  // Secret phrase logic
+  // Secret trigger state
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
 
-  // Listen for secret phrase "thepowersthatbe"
+  // Secret phrase listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setTypedKeys((prev) => {
-        const updated = (prev + e.key.toLowerCase()).replace(/[^a-z]/g, '').slice(-30);
-        if (updated.includes('thepowersthatbe')) setShowSecret(true);
-        return updated;
+        const next = (prev + e.key.toLowerCase()).replace(/[^a-z]/g, '').slice(-30);
+        if (next.includes('thepowersthatbe')) {
+          setShowSecret(true);
+        }
+        return next;
       });
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Load feeds from localStorage on mount and fetch articles
+  const addFeed = async (url: string): Promise<void> => {
+    if (feeds.includes(url)) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/fetch-feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feeds: [url] }),
+      });
+      if (!res.ok) throw new Error('Failed to fetch feed');
+      const newArticles = await res.json();
+      setFeeds((prev) => [...prev, url]);
+      setArticles((prev) => [...prev, ...newArticles]);
+    } catch (err) {
+      setError('Failed to add feed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFeed = async (url: string): Promise<void> => {
+    setFeeds((prev) => prev.filter((f) => f !== url));
+    setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
+  };
+
+  const clearError = () => setError('');
+
   useEffect(() => {
-    const loadSavedFeeds = async () => {
+    const loadFeeds = async () => {
       try {
-        const savedFeeds = JSON.parse(localStorage.getItem('feeds') || '[]');
-        if (Array.isArray(savedFeeds)) {
-          setFeeds(savedFeeds);
-          setLoadingFeeds(true);
-          const fetchedArticles = await fetchArticlesFromFeeds(savedFeeds);
-          setArticles(fetchedArticles);
-        }
+        const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
+        setFeeds(savedFeeds);
+        const articlesArrays = await Promise.all(
+          savedFeeds.map(async (url) => {
+            try {
+              const res = await fetch('/api/fetch-feed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ feeds: [url] }),
+              });
+              if (!res.ok) return [];
+              return await res.json();
+            } catch {
+              return [];
+            }
+          })
+        );
+        setArticles(articlesArrays.flat());
       } catch {
-        setError('Failed to load saved feeds.');
-      } finally {
-        setLoadingFeeds(false);
+        setError('Failed to fetch articles from saved feeds.');
       }
     };
-    loadSavedFeeds();
+    loadFeeds();
   }, []);
 
-  // Save feeds to localStorage when feeds change
   useEffect(() => {
     localStorage.setItem('feeds', JSON.stringify(feeds));
   }, [feeds]);
 
-  // Fetch articles helper
-  const fetchArticlesFromFeeds = async (feedUrls: string[]) => {
-    try {
-      const responses = await Promise.all(
-        feedUrls.map(async (url) => {
-          const res = await fetch('/api/fetch-feed', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ feeds: [url] }),
-          });
-          if (!res.ok) return [];
-          return await res.json();
-        })
-      );
-      // Flatten array of arrays and sort by pubDate descending
-      return responses.flat().sort(
-        (a: Article, b: Article) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-      );
-    } catch {
-      setError('Failed to fetch articles.');
-      return [];
-    }
-  };
-
-  // Add a new feed
-  const addFeed = async (url: string) => {
-    if (feeds.includes(url)) return;
-    setLoadingFeeds(true);
-    setError('');
-    try {
-      const newArticles = await fetchArticlesFromFeeds([url]);
-      setFeeds((prev) => [...prev, url]);
-      setArticles((prev) => [...prev, ...newArticles]);
-    } catch {
-      setError('Failed to add feed.');
-    } finally {
-      setLoadingFeeds(false);
-    }
-  };
-
-  // Remove a feed and its articles
-  const removeFeed = async (url: string): Promise<void> => {
-  setFeeds((prev) => prev.filter((f) => f !== url));
-  setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
-};
-
-  // Toggle tags filter
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  // Filter articles based on tags, search term, and source filter
-  const filteredArticles = articles.filter((article) => {
-    const matchesTags =
-      selectedTags.length === 0 ||
-      article.tags?.some((tag) => selectedTags.includes(tag));
-    const matchesSearch =
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSource =
-      sourceFilter.trim() === '' ||
-      article.source.toLowerCase().includes(sourceFilter.toLowerCase());
-    return matchesTags && matchesSearch && matchesSource;
-  });
+  const filteredArticles = Array.isArray(articles)
+    ? articles.filter((article) => {
+        const matchesTags =
+          selectedTags.length === 0 ||
+          article.tags?.some((tag: string) => selectedTags.includes(tag));
+        const matchesSearch =
+          article.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          article.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSource =
+          !sourceFilter.trim() ||
+          article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
+        return matchesTags && matchesSearch && matchesSource;
+      })
+    : [];
 
-  // Articles currently visible (pagination)
-  const visibleArticles = filteredArticles.slice(0, visibleCount);
+  const filteredArticlesSorted = filteredArticles.sort(
+  (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+);
 
-  // Handler to expand or collapse an article and fetch full content
-  const toggleExpandArticle = async (article: Article) => {
-    if (expandedArticleLink === article.link) {
-      // Collapse if already expanded
-      setExpandedArticleLink(null);
-      setExpandedContent('');
-      return;
-    }
-
-    setExpandedArticleLink(article.link);
-    setLoadingFullArticle(true);
-
-    try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(article.link)}`);
-      const data = await res.json();
-      setExpandedContent(data.content || '<p>Failed to load content</p>');
-    } catch {
-      setExpandedContent('<p>Failed to load content</p>');
-    } finally {
-      setLoadingFullArticle(false);
-    }
-  };
+const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
   return (
     <>
@@ -185,19 +145,19 @@ const Home: React.FC = () => {
           feeds={feeds}
           addFeed={addFeed}
           removeFeed={removeFeed}
-          loading={loadingFeeds}
+          loading={loading}
           error={error}
-          clearError={() => setError('')}
+          clearError={clearError}
         />
 
-        <section aria-label="Search and filter" style={styles.controlsContainer}>
+        <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
             type="text"
             placeholder="Search articles..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={styles.input}
-            disabled={loadingFeeds}
+            disabled={loading}
           />
           <input
             type="text"
@@ -205,7 +165,7 @@ const Home: React.FC = () => {
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
             style={{ ...styles.input, marginTop: 8 }}
-            disabled={loadingFeeds}
+            disabled={loading}
           />
         </section>
 
@@ -219,250 +179,284 @@ const Home: React.FC = () => {
                 ...(selectedTags.includes(tag) ? styles.tagButtonActive : {}),
               }}
               aria-pressed={selectedTags.includes(tag)}
-              disabled={loadingFeeds}
+              disabled={loading}
             >
               {tag}
             </button>
           ))}
         </section>
 
-        {loadingFeeds && <p style={styles.statusText}>Loading articles...</p>}
-        {!loadingFeeds && error && (
+        {loading && <p style={styles.statusText}>Loading articles...</p>}
+        {!loading && error && (
           <p role="alert" style={{ ...styles.statusText, color: '#f66' }}>
             {error}
           </p>
         )}
 
         <section aria-label="News articles" style={styles.articlesSection}>
-          {filteredArticles.length === 0 && !loadingFeeds && !error && (
+          {filteredArticles.length === 0 && !loading && !error && (
             <p style={styles.statusText}>No articles found.</p>
           )}
-
           <ul style={styles.articleList}>
             {visibleArticles.map((article) => (
-              <li key={article.link} style={styles.articleItem}>
-                <img
-                  src={article.thumbnail || '/images/fallback.png'}
-                  alt={`${article.source || 'News'} logo`}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/images/fallback.png';
-                  }}
-                  style={styles.thumbnail}
-                />
-                <div style={styles.articleContent}>
-                  <a
-                    href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.articleTitle}
-                  >
-                    {article.title}
-                  </a>
-                  <p style={styles.articleDescription}>{article.description}</p>
-                  <small style={styles.articleMeta}>
-                    {new Date(article.pubDate).toLocaleString()} | {article.source}
-                  </small>
+  <li key={article.link} style={styles.articleItem}>
+    <img
+      src={article.thumbnail || '/images/fallback.png'}
+      alt={${article.source || 'News'} logo}
+      onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = '/images/fallback.png';
+      }}
+      style={styles.thumbnail}
+    />
+    <div style={styles.articleContent}>
+      <a
+        href={article.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={styles.articleTitle}
+      >
+        {article.title}
+      </a>
+      <p style={styles.articleDescription}>{article.description}</p>
+      <small style={styles.articleMeta}>
+        {new Date(article.pubDate).toLocaleString()} | {article.source}
+      </small>
 
-                  {/* Audio player if available */}
-                  {article.audioUrl && (
-                    <audio controls style={{ width: '100%', marginTop: 10 }}>
-                      <source src={article.audioUrl} type="audio/mpeg" />
-                      Your browser does not support the audio element.
-                    </audio>
-                  )}
+      {/* Audio player */}
+      {article.audioUrl && (
+        <audio controls style={{ width: '100%', marginTop: 10 }}>
+          <source src={article.audioUrl} type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
+      )}
 
-                  {/* Read here / Hide button + Visit source */}
-                  <div style={{ marginTop: 10 }}>
-                    <button
-                      onClick={() => toggleExpandArticle(article)}
-                      style={{
-                        marginRight: 10,
-                        border: '1px solid #0f0',
-                        backgroundColor: 'transparent',
-                        color: '#0f0',
-                        borderRadius: 6,
-                        padding: '5px 10px',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                      }}
-                      aria-expanded={expandedArticleLink === article.link}
-                    >
-                      {expandedArticleLink === article.link
-                        ? loadingFullArticle
-                          ? 'Loading...'
-                          : 'Hide'
-                        : 'Read here'}
-                    </button>
+      {/* Quick View Toggle */}
+      <div style={{ marginTop: 10 }}>
+        <button
+          onClick={async () => {
+            if (expandedArticle === article.link) {
+              setExpandedArticle(null);
+              setExpandedContent('');
+              return;
+            }
+            setExpandedArticle(article.link);
+            setLoadingFullArticle(true);
+            const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(article.link)}`);
+const data = await res.json();
+            });
+            const data = await res.json();
+            setExpandedContent(data.content || '<p>Failed to load content</p>');
+            setExpandedArticle(article.link);
+            setLoadingFullArticle(false);
+          }}
+          style={{
+            marginRight: 10,
+            border: '1px solid #0f0',
+            backgroundColor: 'transparent',
+            color: '#0f0',
+            borderRadius: 6,
+            padding: '5px 10px',
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          {expandedArticle === article.link ? 'Hide' : 'Read here'}
+        </button>
 
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: '#0f0',
-                        textDecoration: 'underline',
-                        fontSize: 14,
-                      }}
-                    >
-                      Visit source
-                    </a>
-                  </div>
+        <a
+          href={article.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            border: '1px solid #0070f3',
+            color: '#0070f3',
+            padding: '5px 10px',
+            borderRadius: 6,
+            textDecoration: 'none',
+            fontSize: 14,
+          }}
+        >
+          Visit source
+        </a>
+      </div>
 
-                  {/* Expanded article content */}
-                  {expandedArticleLink === article.link && !loadingFullArticle && (
-                    <article
-                      style={{
-                        marginTop: 15,
-                        backgroundColor: '#111',
-                        borderRadius: 8,
-                        padding: 20,
-                        color: '#ddd',
-                        overflowWrap: 'break-word',
-                      }}
-                      dangerouslySetInnerHTML={{ __html: expandedContent }}
-                    />
-                  )}
-                </div>
-              </li>
+      {/* Expanded Reader */}
+      {expandedArticle === article.link && (
+        <div
+          style={{
+            marginTop: 20,
+            backgroundColor: '#111',
+            padding: 15,
+            borderRadius: 8,
+            border: '1px solid #333',
+          }}
+        >
+          {loadingFullArticle ? (
+            <p>Loading full article...</p>
+          ) : (
+            <div
+              dangerouslySetInnerHTML={{ __html: expandedContent }}
+              style={{ color: '#ccc', lineHeight: 1.6 }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Tags */}
+      <div style={styles.articleTags}>
+        {article.tags?.map((tag: string) => (
+          <span key={tag} style={styles.tag}>
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  </li>
             ))}
           </ul>
-
-          {/* Load more button */}
           {visibleCount < filteredArticles.length && (
             <button
-              onClick={() => setVisibleCount((c) => c + 10)}
+              onClick={() => setVisibleCount((count) => count + 10)}
               style={{
                 marginTop: 20,
-                padding: '8px 16px',
-                fontSize: 16,
+                padding: '10px 20px',
                 cursor: 'pointer',
-                backgroundColor: '#0f0',
-                border: 'none',
                 borderRadius: 6,
+                border: '1px solid #0f0',
+                backgroundColor: '000',
+                color: '#0f0',
+                fontFamily: "'Courier New', Courier, monospace",
               }}
             >
-              Load more articles
+              Load More
             </button>
           )}
         </section>
-
-        {/* Secret Easter egg */}
+        {/* Secret Button */}
         {showSecret && (
-          <div
+          <a
+            href="https://jacksgithubaccoun.github.io/Shaguar/"
             style={{
-              position: 'fixed',
-              bottom: 20,
-              right: 20,
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              padding: '8px 12px',
               backgroundColor: '#0f0',
               color: '#000',
-              padding: 12,
               borderRadius: 8,
+              textDecoration: 'none',
               fontWeight: 'bold',
-              boxShadow: '0 0 10px #0f0',
+              zIndex: 9999,
             }}
           >
-            Welcome to the secret hidden zone! ⚡
-          </div>
+            🔒 Secret
+          </a>
         )}
       </main>
     </>
   );
 };
 
-// Styles for the page
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    maxWidth: 980,
-    margin: 'auto',
+    position: 'relative',
+    zIndex: 1,
+    maxWidth: 900,
+    margin: '0 auto',
     padding: 20,
-    fontFamily: 'Arial, sans-serif',
-    color: '#eee',
+    fontFamily: "'Courier New', Courier, monospace",
+    color: '#0f0',
     minHeight: '100vh',
   },
   title: {
-    fontSize: 36,
-    marginBottom: 24,
     textAlign: 'center',
-    color: '#0f0',
   },
   controlsContainer: {
-    marginBottom: 20,
+    marginTop: 20,
   },
   input: {
     width: '100%',
     padding: 8,
     fontSize: 16,
-    borderRadius: 6,
-    border: '1px solid #444',
-    backgroundColor: '#222',
-    color: '#eee',
+    borderRadius: 4,
+    border: '1px solid #ccc',
+    boxSizing: 'border-box',
   },
   tagsContainer: {
+    marginTop: 20,
     display: 'flex',
     gap: 10,
     flexWrap: 'wrap',
-    marginBottom: 20,
+    justifyContent: 'center',
   },
   tagButton: {
-    backgroundColor: '#222',
-    color: '#aaa',
-    border: '1px solid #555',
-    borderRadius: 6,
-    padding: '6px 12px',
+    border: '1px solid #ccc',
+    borderRadius: 20,
+    padding: '5px 15px',
+    background: '#000',
     cursor: 'pointer',
-    userSelect: 'none',
   },
   tagButtonActive: {
-    backgroundColor: '#0f0',
-    color: '#000',
-    borderColor: '#0f0',
+    background: '#0070f3',
+    color: '#fff',
+    borderColor: '#0070f3',
   },
   statusText: {
-    textAlign: 'center',
-    fontSize: 16,
     marginTop: 20,
+    textAlign: 'center',
   },
   articlesSection: {
-    marginTop: 20,
+    marginTop: 30,
   },
   articleList: {
     listStyle: 'none',
     padding: 0,
-    margin: 0,
   },
   articleItem: {
     display: 'flex',
-    gap: 20,
-    marginBottom: 30,
-    borderBottom: '1px solid #444',
-    paddingBottom: 20,
+    gap: 15,
+    padding: 15,
+    borderBottom: '1px solid #ddd',
   },
   thumbnail: {
-    width: 100,
-    height: 100,
+    width: 60,
+    height: 60,
     objectFit: 'contain',
     borderRadius: 8,
-    backgroundColor: '#111',
     flexShrink: 0,
   },
   articleContent: {
     flex: 1,
   },
   articleTitle: {
-    color: '#0f0',
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#0070f3',
     textDecoration: 'none',
   },
   articleDescription: {
-    color: '#aaa',
-    marginTop: 6,
+    marginTop: 8,
+    fontSize: 14,
+    color: '#ccc',
   },
   articleMeta: {
-    color: '#666',
-    marginTop: 6,
+    marginTop: 5,
     fontSize: 12,
+    color: '#999',
+  },
+  articleTags: {
+    marginTop: 6,
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  tag: {
+    fontSize: 12,
+    background: '#333',
+    color: '#0f0',
+    borderRadius: 12,
+    padding: '2px 8px',
   },
 };
 
