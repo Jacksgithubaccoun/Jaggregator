@@ -474,9 +474,6 @@ const styles = {
     borderRadius: 8,
     flexShrink: 0,
   },
-  articleContent: {
-    flex: 1,
-  },
   articleTitle: {
     fontSize: 20,
     fontWeight: 'bold' as const,
