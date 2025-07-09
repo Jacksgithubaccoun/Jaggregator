@@ -316,7 +316,7 @@ const Home: React.FC = () => {
   wordBreak: 'break-word',    // Ensure text wraps nicely
   whiteSpace: 'normal',       // Allow normal wrapping of text
   overflowX: 'auto',          // Scroll only if absolutely necessary horizontally
-}}
+}}> </div>
 
                       {article.audioUrl ? (
                         <audio controls style={{ width: '100%' }} key={article.audioUrl}>
