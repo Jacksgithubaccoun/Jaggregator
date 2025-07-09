@@ -17,13 +17,13 @@ const Home: React.FC = () => {
   const [sourceFilter, setSourceFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(10);
 
-  // For expanded article content loading
-  const [loadingFullArticle, setLoadingFullArticle] = useState(false);
-  const [expandedContent, setExpandedContent] = useState<string>('');
-
   // Secret trigger state
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
+
+  // Full article reader state
+  const [loadingFullArticle, setLoadingFullArticle] = useState(false);
+  const [expandedContent, setExpandedContent] = useState<string>('');
 
   // Secret phrase listener
   useEffect(() => {
@@ -51,14 +51,14 @@ const Home: React.FC = () => {
       const data = await res.json();
       setFeeds((prev) => [...prev, url]);
       setArticles((prev) => [...prev, ...data.articles]);
-    } catch {
+    } catch (err) {
       setError('Failed to add feed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const removeFeed = async (url: string): Promise<void> => {
+  const removeFeed = (url: string): void => {
     setFeeds((prev) => prev.filter((f) => f !== url));
     setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
   };
@@ -120,6 +120,31 @@ const Home: React.FC = () => {
   );
 
   const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
+
+  // Load full article content when expandedArticle changes
+  useEffect(() => {
+    if (!expandedArticle) {
+      setExpandedContent('');
+      setLoadingFullArticle(false);
+      return;
+    }
+
+    const fetchFullArticle = async () => {
+      setLoadingFullArticle(true);
+      try {
+        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+        if (!res.ok) throw new Error('Failed to load full article');
+        const data = await res.json();
+        setExpandedContent(data.content || 'No content available.');
+      } catch {
+        setExpandedContent('Failed to load full article.');
+      } finally {
+        setLoadingFullArticle(false);
+      }
+    };
+
+    fetchFullArticle();
+  }, [expandedArticle]);
 
   return (
     <>
@@ -231,18 +256,8 @@ const Home: React.FC = () => {
                     onClick={() => {
                       if (expandedArticle === article.link) {
                         setExpandedArticle(null);
-                        setExpandedContent('');
                       } else {
                         setExpandedArticle(article.link);
-                        // You might want to load full content here asynchronously
-                        setLoadingFullArticle(true);
-                        // Simulate loading full article content:
-                        setTimeout(() => {
-                          setExpandedContent(
-                            `<p>Full article content for: <strong>${article.title}</strong></p>`
-                          );
-                          setLoadingFullArticle(false);
-                        }, 1000);
                       }
                     }}
                     style={{
@@ -441,5 +456,20 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 5,
     fontSize: 12,
     color: '#999',
- 
+  },
+  articleTags: {
+    marginTop: 6,
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  tag: {
+    fontSize: 12,
+    background: '#333',
+    color: '#0f0',
+    borderRadius: 12,
+    padding: '2px 8px',
+  },
+};
 
+export default Home;
