@@ -225,7 +225,6 @@ const Home: React.FC = () => {
   removeFeed={removeFeed}
   loading={loading}
   error={error}
-  clearError={clearError}
 />
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
