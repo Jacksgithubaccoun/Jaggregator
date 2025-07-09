@@ -1,4 +1,4 @@
-// pages/api/fetch-feeds.ts
+// pages/api/articles.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Parser from 'rss-parser';
 
@@ -42,7 +42,7 @@ function detectTags(article: any): string[] {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const rssFeeds: string[] = [
     'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-    // Add more RSS feed URLs here
+    // Add your RSS feed URLs here
   ];
 
   let rssArticles: any[] = [];
@@ -50,13 +50,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   for (const feedUrl of rssFeeds) {
     try {
       const feed = await parser.parseURL(feedUrl);
+
       feed.items.forEach(item => {
         rssArticles.push({
-          title: item.title,
-          link: item.link,
+          title: item.title || 'No title',
+          link: item.link || '',
           pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
           source: feed.title || 'RSS Feed',
           description: item.contentSnippet || item.content || '',
+          audioUrl: item.enclosure?.url || null,
+          audioType: item.enclosure?.type || null,
         });
       });
     } catch (err) {
