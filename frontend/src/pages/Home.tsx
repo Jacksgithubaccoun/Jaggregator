@@ -256,12 +256,12 @@ const Home: React.FC = () => {
                   </small>
 
                   {/* Audio player inside article (if present, outside expanded) */}
-                  {article.audioUrl && !expandedArticle && (
-                    <audio controls style={{ width: '100%', marginTop: 10 }}>
-                      <source src={article.audioUrl} type="audio/mpeg" />
-                      Your browser does not support the audio element.
-                    </audio>
-                  )}
+                  <audio controls preload="metadata" style={{ width: '100%', marginTop: 10 }}>
+  <source src={article.audioUrlMp3} type="audio/mpeg" />
+  <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />
+  <source src={article.audioUrlWebm} type="audio/webm" />
+  Your browser does not support the audio element.
+</audio>
 
                   {/* Read here button */}
                   <button
@@ -303,8 +303,8 @@ const Home: React.FC = () => {
                     Visit source
                   </a>
 
-                  {/* Expanded Reader */}
-                 {expandedArticle === article.link && (
+                 {/* Expanded Reader */}
+{expandedArticle === article.link && (
   <div
     style={{
       marginTop: 20,
@@ -313,14 +313,17 @@ const Home: React.FC = () => {
       borderRadius: 8,
       border: '1px solid #333',
       maxWidth: '100%',
-      overflowX: 'auto' as const,
-      whiteSpace: 'pre-wrap' as const,
-      wordBreak: 'break-word' as const,
+      overflowX: 'auto',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
     }}
   >
-    {article.audioUrl ? (
-      <audio controls style={{ width: '100%' }} key={article.audioUrl}>
-        <source src={article.audioUrl} type="audio/mpeg" />
+    {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
+      <audio controls style={{ width: '100%' }} key={article.link}>
+        {article.audioUrl && <source src={article.audioUrl} type="audio/mpeg" />}
+        {article.audioUrlMp3 && <source src={article.audioUrlMp3} type="audio/mpeg" />}
+        {article.audioUrlOgg && <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />}
+        {article.audioUrlWebm && <source src={article.audioUrlWebm} type="audio/webm" />}
         Your browser does not support the audio element.
       </audio>
     ) : loadingFullArticle ? (
