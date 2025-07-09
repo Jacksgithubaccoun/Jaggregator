@@ -10,6 +10,9 @@ const Home: React.FC = () => {
   const [feeds, setFeeds] = useState<string[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
+const [expandedContent, setExpandedContent] = useState<string>('');
+const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [error, setError] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,38 +199,122 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
           )}
           <ul style={styles.articleList}>
             {visibleArticles.map((article) => (
-              <li key={article.link} style={styles.articleItem}>
-                <img
-                  src={article.thumbnail || '/images/fallback.png'}
-                  alt={`${article.source || 'News'} logo`}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/images/fallback.png';
-                  }}
-                  style={styles.thumbnail}
-                />
-                <div style={styles.articleContent}>
-                  <a
-                    href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.articleTitle}
-                  >
-                    {article.title}
-                  </a>
-                  <p style={styles.articleDescription}>{article.description}</p>
-                  <small style={styles.articleMeta}>
-                    {new Date(article.pubDate).toLocaleString()} | {article.source}
-                  </small>
-                  <div style={styles.articleTags}>
-                    {article.tags?.map((tag: string) => (
-                      <span key={tag} style={styles.tag}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </li>
+  <li key={article.link} style={styles.articleItem}>
+    <img
+      src={article.thumbnail || '/images/fallback.png'}
+      alt={`${article.source || 'News'} logo`}
+      onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = '/images/fallback.png';
+      }}
+      style={styles.thumbnail}
+    />
+    <div style={styles.articleContent}>
+      <a
+        href={article.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={styles.articleTitle}
+      >
+        {article.title}
+      </a>
+      <p style={styles.articleDescription}>{article.description}</p>
+      <small style={styles.articleMeta}>
+        {new Date(article.pubDate).toLocaleString()} | {article.source}
+      </small>
+
+      {/* Audio player */}
+      {article.audioUrl && (
+        <audio controls style={{ width: '100%', marginTop: 10 }}>
+          <source src={article.audioUrl} type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
+      )}
+
+      {/* Quick View Toggle */}
+      <div style={{ marginTop: 10 }}>
+        <button
+          onClick={async () => {
+            if (expandedArticle === article.link) {
+              setExpandedArticle(null);
+              setExpandedContent('');
+              return;
+            }
+            setExpandedArticle(article.link);
+            setLoadingFullArticle(true);
+            const res = await fetch('/api/fetch-article', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: article.link }),
+            });
+            const data = await res.json();
+            setExpandedContent(data.content || '<p>Failed to load content</p>');
+            setExpandedArticle(article.link);
+            setLoadingFullArticle(false);
+          }}
+          style={{
+            marginRight: 10,
+            border: '1px solid #0f0',
+            backgroundColor: 'transparent',
+            color: '#0f0',
+            borderRadius: 6,
+            padding: '5px 10px',
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          {expandedArticle === article.link ? 'Hide' : 'Read here'}
+        </button>
+
+        <a
+          href={article.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            border: '1px solid #0070f3',
+            color: '#0070f3',
+            padding: '5px 10px',
+            borderRadius: 6,
+            textDecoration: 'none',
+            fontSize: 14,
+          }}
+        >
+          Visit source
+        </a>
+      </div>
+
+      {/* Expanded Reader */}
+      {expandedArticle === article.link && (
+        <div
+          style={{
+            marginTop: 20,
+            backgroundColor: '#111',
+            padding: 15,
+            borderRadius: 8,
+            border: '1px solid #333',
+          }}
+        >
+          {loadingFullArticle ? (
+            <p>Loading full article...</p>
+          ) : (
+            <div
+              dangerouslySetInnerHTML={{ __html: expandedContent }}
+              style={{ color: '#ccc', lineHeight: 1.6 }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Tags */}
+      <div style={styles.articleTags}>
+        {article.tags?.map((tag: string) => (
+          <span key={tag} style={styles.tag}>
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  </li>
             ))}
           </ul>
           {visibleCount < filteredArticles.length && (
@@ -248,25 +335,6 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
             </button>
           )}
         </section>
-
-        {/* Invisible link */}
-        <a
-          href="https://jacksgithubaccoun.github.io/Shaguar/"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: 1,
-            height: 1,
-            overflow: 'hidden',
-            opacity: 0,
-            pointerEvents: 'auto',
-          }}
-          aria-hidden="true"
-        >
-          hidden
-        </a>
-
         {/* Secret Button */}
         {showSecret && (
           <a
