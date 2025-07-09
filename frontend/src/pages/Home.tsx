@@ -200,6 +200,36 @@ const Home: React.FC = () => {
           zIndex: 10,
         }}
       >
+        <FeedsManager feeds={feeds} addFeed={addFeed} removeFeed={removeFeed} />
+
+<section style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+  <input
+    type="text"
+    placeholder="Search title or description..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    style={{
+      padding: 8,
+      backgroundColor: '#111',
+      color: '#eee',
+      border: '1px solid #555',
+      borderRadius: 4,
+    }}
+  />
+  <input
+    type="text"
+    placeholder="Filter by source..."
+    value={sourceFilter}
+    onChange={(e) => setSourceFilter(e.target.value)}
+    style={{
+      padding: 8,
+      backgroundColor: '#111',
+      color: '#eee',
+      border: '1px solid #555',
+      borderRadius: 4,
+    }}
+  />
+</section>
         <section style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
   {allTags.map((tag) => (
     <button
