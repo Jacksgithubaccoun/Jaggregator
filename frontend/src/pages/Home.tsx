@@ -393,12 +393,12 @@ const Home: React.FC = () => {
 const styles = {
   container: {
     maxWidth: '1000px',
-    width: '100%', // Ensure container doesn't overflow parent
+    width: '100%',
     margin: 'auto',
     color: '#eee',
     fontFamily: "'Consolas', monospace",
-    overflowWrap: 'anywhere',
-    wordBreak: 'break-word',
+    overflowWrap: 'anywhere' as 'normal' | 'break-word' | 'anywhere',
+    wordBreak: 'break-word' as 'normal' | 'break-all' | 'keep-all' | 'break-word',
   },
   articleContent: {
     whiteSpace: 'pre-wrap',
