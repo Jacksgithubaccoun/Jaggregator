@@ -41,7 +41,8 @@ const Home: React.FC = () => {
   const [showSecret, setShowSecret] = useState(false);
   const [expandedContent, setExpandedContent] = useState<Record<string, { content: string; audioSources: Record<string, string>; transcript: string }>>({});
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
-
+  const [expandedTranscript, setExpandedTranscript] = useState('');
+  const [expandedAudioSources, setExpandedAudioSources] = useState<Record<string, string>>({});
   const clearError = () => setError('');
 
   useEffect(() => {
@@ -220,29 +221,56 @@ const Home: React.FC = () => {
                     <button onClick={() => expandArticle(article.link)} style={{ marginRight: 10, marginTop: 6, cursor: 'pointer', background: '#444', border: 'none', color: '#eee', padding: '6px 10px', borderRadius: 4 }}>
                       {expandedArticle === article.link ? 'Collapse' : 'Expand'}
                     </button>
-                    {expandedArticle === article.link && !loadingFullArticle && expanded && (
-                      <>
-                        {Object.values(expanded.audioSources).some(Boolean) && <AudioPlayer audioSources={expanded.audioSources} />}
-                        <article
-  style={{
-    marginTop: 20,
-    maxWidth: '600px',
-    width: '100%',
-    maxHeight: 400,
-    overflowY: 'auto',
-    backgroundColor: '#111',
-    padding: '20px 25px',
-    borderRadius: 6,
-    color: '#ccc',
-    fontSize: '16px',
-    lineHeight: 1.6,
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    boxSizing: 'border-box',
-    fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
-  }}
-  dangerouslySetInnerHTML={{ __html: expandedContent }}
-/>
+                    {expandedArticle === article.link && !loadingFullArticle && (
+  <>
+    {expandedContent && (
+      <article
+        style={{
+          marginTop: 20,
+          maxWidth: '600px',
+          width: '100%',
+          maxHeight: 400,
+          overflowY: 'auto',
+          backgroundColor: '#111',
+          padding: '20px 25px',
+          borderRadius: 6,
+          color: '#ccc',
+          fontSize: '16px',
+          lineHeight: 1.6,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          boxSizing: 'border-box',
+          fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+        }}
+        dangerouslySetInnerHTML={{ __html: expandedContent }}
+      />
+    )}
+
+    {expandedTranscript && (
+      <pre
+        style={{
+          marginTop: 10,
+          maxWidth: '600px',
+          width: '100%',
+          maxHeight: 200,
+          overflowY: 'auto',
+          backgroundColor: '#000',
+          padding: 15,
+          borderRadius: 6,
+          color: '#0f0',
+          fontSize: 14,
+          whiteSpace: 'pre-wrap',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          boxSizing: 'border-box',
+          fontFamily: 'monospace',
+        }}
+      >
+        {expandedTranscript}
+      </pre>
+    )}
+  </>
+)}
                         {expanded.transcript && <pre style={{ marginTop: 10, backgroundColor: '#000', padding: 10, color: '#0f0', fontSize: 12 }}>{expanded.transcript}</pre>}
                       </>
                     )}
