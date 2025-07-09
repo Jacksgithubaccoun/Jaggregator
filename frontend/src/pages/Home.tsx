@@ -59,11 +59,11 @@ const Home: React.FC = () => {
   };
 
   const removeFeed = async (url: string): Promise<void> => {
-  setFeeds((prev) => prev.filter((f) => f !== url));
-  setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
-  // No actual async work here, so just return resolved promise
-  return Promise.resolve();
-};
+    setFeeds((prev) => prev.filter((f) => f !== url));
+    setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
+    return Promise.resolve();
+  };
+
   const clearError = () => setError('');
 
   useEffect(() => {
@@ -130,23 +130,33 @@ const Home: React.FC = () => {
       return;
     }
 
-const fetchFullArticle = async () => {
-  setLoadingFullArticle(true);
-  try {
-    const res = await fetch(`./api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
-    if (!res.ok) throw new Error('Failed to load full article');
-    const data = await res.json();
-    setExpandedContent(data.content || 'No content available.');
-  } catch (err) {
-    console.error(err); // optional: helpful for debugging
-    setExpandedContent('Failed to load full article.');
-  } finally {
-    setLoadingFullArticle(false);
-  }
-};
+    // Find the selected article
+    const selected = articles.find((a) => a.link === expandedArticle);
+
+    // If it has audioUrl, no need to fetch full article, just clear content since audio controls will show
+    if (selected?.audioUrl) {
+      setExpandedContent(''); // no HTML content needed, audio player will render
+      setLoadingFullArticle(false);
+      return;
+    }
+
+    const fetchFullArticle = async () => {
+      setLoadingFullArticle(true);
+      try {
+        const res = await fetch(`./api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+        if (!res.ok) throw new Error('Failed to load full article');
+        const data = await res.json();
+        setExpandedContent(data.content || 'No content available.');
+      } catch (err) {
+        console.error(err);
+        setExpandedContent('Failed to load full article.');
+      } finally {
+        setLoadingFullArticle(false);
+      }
+    };
 
     fetchFullArticle();
-  }, [expandedArticle]);
+  }, [expandedArticle, articles]);
 
   return (
     <>
@@ -245,8 +255,8 @@ const fetchFullArticle = async () => {
                     {new Date(article.pubDate).toLocaleString()} | {article.source}
                   </small>
 
-                  {/* Audio player */}
-                  {article.audioUrl && (
+                  {/* Audio player inside article (if present, outside expanded) */}
+                  {article.audioUrl && !expandedArticle && (
                     <audio controls style={{ width: '100%', marginTop: 10 }}>
                       <source src={article.audioUrl} type="audio/mpeg" />
                       Your browser does not support the audio element.
@@ -295,21 +305,17 @@ const fetchFullArticle = async () => {
 
                   {/* Expanded Reader */}
                   {expandedArticle === article.link && (
-                    <div
-                      style={{
-                        marginTop: 20,
-                        backgroundColor: '#111',
-                        padding: 15,
-                        borderRadius: 8,
-                        border: '1px solid #333',
-                      }}
-                    >
-                      {loadingFullArticle ? (
+                    <div style={styles.expandedArticleContent}>
+                      {article.audioUrl ? (
+                        <audio controls style={{ width: '100%' }} key={article.audioUrl}>
+                          <source src={article.audioUrl} type="audio/mpeg" />
+                          Your browser does not support the audio element.
+                        </audio>
+                      ) : loadingFullArticle ? (
                         <p>Loading full article...</p>
                       ) : (
                         <div
                           dangerouslySetInnerHTML={{ __html: expandedContent }}
-                          style={{ color: '#ccc', lineHeight: 1.6 }}
                         />
                       )}
                     </div>
@@ -333,39 +339,38 @@ const fetchFullArticle = async () => {
               onClick={() => setVisibleCount((count) => count + 10)}
               style={{
                 marginTop: 20,
-                padding: '10px 20px',
-                cursor: 'pointer',
+                display: 'block',
+                width: '100%',
+                padding: 10,
+                backgroundColor: '#0070f3',
+                color: '#fff',
+                border: 'none',
                 borderRadius: 6,
-                border: '1px solid #0f0',
-                backgroundColor: '#000',
-                color: '#0f0',
-                fontFamily: "'Courier New', Courier, monospace",
+                cursor: 'pointer',
+                fontSize: 16,
               }}
             >
-              Load More
+              Load more articles
             </button>
           )}
         </section>
 
-        {/* Secret Button */}
+        {/* Secret Easter Egg */}
         {showSecret && (
-          <a
-            href="https://jacksgithubaccoun.github.io/Shaguar/"
+          <section
+            aria-label="Secret Easter Egg"
             style={{
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              padding: '8px 12px',
-              backgroundColor: '#0f0',
-              color: '#000',
-              borderRadius: 8,
-              textDecoration: 'none',
-              fontWeight: 'bold',
-              zIndex: 9999,
+              marginTop: 40,
+              padding: 20,
+              backgroundColor: '#111',
+              borderRadius: 12,
+              color: '#0f0',
+              textAlign: 'center',
+              fontSize: 18,
             }}
           >
-            🔒 Secret
-          </a>
+            <p>You found the secret: The Powers That Be!</p>
+          </section>
         )}
       </main>
     </>
@@ -472,6 +477,22 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 12,
     padding: '2px 8px',
   },
+  expandedArticleContent: {
+    marginTop: 20,
+    backgroundColor: '#111',
+    padding: 15,
+    borderRadius: 8,
+    border: '1px solid #333',
+    color: '#ccc',
+    lineHeight: 1.6,
+    fontSize: 16,
+    maxHeight: '60vh',
+    overflowY: 'auto',
+    whiteSpace: 'normal',
+    wordBreak: 'break-word',
+  },
 };
 
 export default Home;
+
+
