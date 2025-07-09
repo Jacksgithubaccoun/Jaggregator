@@ -393,7 +393,6 @@ const Home: React.FC = () => {
 };
 
 const styles = {
-  const styles = {
   container: {
     maxWidth: '1000px',
     width: '100%', // Ensure container doesn't overflow parent
