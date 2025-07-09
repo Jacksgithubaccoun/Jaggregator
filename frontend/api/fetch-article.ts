@@ -12,6 +12,15 @@ const parser = new Parser({
   },
 });
 
+function isValidHttpUrl(urlString: string) {
+  try {
+    const url = new URL(urlString);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { url } = req.query;
   if (!url || typeof url !== 'string') {
@@ -47,10 +56,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           };
         }
 
-        if (!item.link) return null;
+        // Validate article link
+        if (!item.link || !isValidHttpUrl(item.link)) {
+          console.warn('Skipping invalid article link:', item.link);
+          return {
+            title: item.title || 'No title',
+            content: '<p>Invalid or missing article link.</p>',
+            audioUrl: null,
+            transcript: '',
+            link: item.link || '',
+            pubDate: item.pubDate || '',
+            source: feed.title || '',
+            thumbnail: item.enclosure?.url || item.itunes?.image || '',
+            description: item.contentSnippet || '',
+            tags: ['article'],
+          };
+        }
 
         try {
           const response = await fetch(item.link);
+          if (!response.ok) throw new Error(`Failed to fetch: ${item.link}`);
+
           const html = await response.text();
           const dom = new JSDOM(html, { url: item.link });
           const reader = new Readability(dom.window.document);
@@ -68,7 +94,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             description: item.contentSnippet || item.summary || '',
             tags: ['article'],
           };
-        } catch {
+        } catch (error) {
+          console.error('Error fetching/parsing article:', item.link, error);
           return {
             title: item.title || 'No title',
             content: '<p>Failed to load article content.</p>',
@@ -88,7 +115,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const filteredArticles = articles.filter(Boolean);
     res.status(200).json({ articles: filteredArticles });
   } catch (error) {
-    console.error(error);
+    console.error('Failed to fetch or parse RSS feed:', error);
     res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
   }
 }
+
