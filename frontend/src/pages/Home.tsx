@@ -304,35 +304,33 @@ const Home: React.FC = () => {
                   </a>
 
                   {/* Expanded Reader */}
-                  {expandedArticle === article.link && (
-                    <div
-                      style={{
-                        marginTop: 20,
-                        backgroundColor: '#111',
-                        padding: 15,
-                        borderRadius: 8,
-                        border: '1px solid #333',
-                        maxWidth: '100%',
-                        overflowWrap: 'break-word',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'normal',
-                        overflowX: 'auto',
-                      }}
-                    >
-                      {article.audioUrl ? (
-                        <audio controls style={{ width: '100%' }} key={article.audioUrl}>
-                          <source src={article.audioUrl} type="audio/mpeg" />
-                          Your browser does not support the audio element.
-                        </audio>
-                      ) : loadingFullArticle ? (
-                        <p>Loading full article...</p>
-                      ) : (
-                        <div
-                          dangerouslySetInnerHTML={{ __html: expandedContent }}
-                        />
-                      )}
-                    </div>
-                  )}
+                 {expandedArticle === article.link && (
+  <div
+    style={{
+      marginTop: 20,
+      backgroundColor: '#111',
+      padding: 15,
+      borderRadius: 8,
+      border: '1px solid #333',
+      maxWidth: '100%',
+      overflowX: 'auto',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+    }}
+  >
+    {article.audioUrl ? (
+      <audio controls style={{ width: '100%' }} key={article.audioUrl}>
+        <source src={article.audioUrl} type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+    ) : loadingFullArticle ? (
+      <p>Loading full article...</p>
+    ) : (
+      <div dangerouslySetInnerHTML={{ __html: expandedContent }} />
+    )}
+  </div>
+)}
+
 
                   {/* Tags */}
                   <div style={styles.articleTags}>
