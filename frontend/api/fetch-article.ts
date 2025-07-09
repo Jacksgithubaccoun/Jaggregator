@@ -18,15 +18,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // For each item, fetch full article content or prepare podcast metadata
     const articles = await Promise.all(
       feed.items.map(async (item) => {
-        const audioUrl =
-          item.enclosure?.type?.includes('mpeg') ||
-          item.enclosure?.type?.includes('mp3') ||
-          item.enclosure?.type?.includes('audio')
-            ? item.enclosure.url
-            : null;
+        // Detect audio URL(s)
+        const audioUrlMp3 = item.enclosure?.type === 'audio/mpeg' ? item.enclosure.url : null;
+        const audioUrlOgg = item.enclosure?.type === 'audio/ogg' ? item.enclosure.url : null;
+        const audioUrlWebm = item.enclosure?.type === 'audio/webm' ? item.enclosure.url : null;
 
-        // If it's a podcast (has audio), no need to fetch page content
+        // Choose one audio URL to use in the player (prioritize mp3)
+        const audioUrl = audioUrlMp3 || audioUrlOgg || audioUrlWebm;
+
         if (audioUrl) {
+          // Podcast with audio: return minimal info + audio player embed
           return {
             title: item.title || 'No title',
             content: `<audio controls src="${audioUrl}"></audio>`,
@@ -36,11 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             source: feed.title || '',
             thumbnail: item.itunes?.image || feed.image?.url || '',
             description: item.contentSnippet || item.summary || '',
-            tags: [],
+            tags: ['audio'],
           };
         }
 
-        // Otherwise, treat as article and fetch full content
+        // Otherwise treat as article and fetch full content
         if (!item.link) return null;
 
         try {
@@ -59,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             source: feed.title || '',
             thumbnail: item.enclosure?.url || item.itunes?.image || '',
             description: item.contentSnippet || item.summary || '',
-            tags: [],
+            tags: ['article'],
           };
         } catch {
           return {
@@ -71,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             source: feed.title || '',
             thumbnail: item.enclosure?.url || '',
             description: item.contentSnippet || '',
-            tags: [],
+            tags: ['article'],
           };
         }
       })
