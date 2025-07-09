@@ -42,21 +42,27 @@ const Home: React.FC = () => {
   }, []);
 
   const addFeed = async (url: string): Promise<void> => {
-    if (feeds.includes(url)) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-      if (!res.ok) throw new Error('Failed to fetch feed articles');
-      const data = await res.json();
-      setFeeds((prev) => [...prev, url]);
-      setArticles((prev) => [...prev, ...data.articles]);
-    } catch (err) {
-      setError('Failed to add feed.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (feeds.includes(url)) return;
+  setLoading(true);
+  setError('');
+  try {
+    const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+    if (!res.ok) throw new Error('Failed to fetch feed articles');
+    const data = await res.json();
+
+    // Filter out articles already in state (based on unique link)
+    const newArticles = data.articles.filter(
+      (newArticle: any) => !articles.some((a) => a.link === newArticle.link)
+    );
+
+    setFeeds((prev) => [...prev, url]);
+    setArticles((prev) => [...prev, ...newArticles]);
+  } catch (err) {
+    setError('Failed to add feed.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
@@ -71,18 +77,26 @@ const Home: React.FC = () => {
       try {
         const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
         setFeeds(savedFeeds);
-        const articlesArrays = await Promise.all(
-          savedFeeds.map(async (url) => {
-            try {
-              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-              if (!res.ok) return [];
-              const data = await res.json();
-              return data.articles || [];
-            } catch {
-              return [];
-            }
-          })
-        );
+       const articlesArrays = await Promise.all(
+  savedFeeds.map(async (url) => {
+    try {
+      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.articles || [];
+    } catch {
+      return [];
+    }
+  })
+);
+
+// Flatten and filter duplicates by link
+const allArticles = articlesArrays.flat();
+const uniqueArticles = allArticles.filter(
+  (article, index, self) => index === self.findIndex((a) => a.link === article.link)
+);
+
+setArticles(uniqueArticles);
         setArticles(articlesArrays.flat());
       } catch {
         setError('Failed to fetch articles from saved feeds.');
@@ -255,13 +269,41 @@ const Home: React.FC = () => {
                     {new Date(article.pubDate).toLocaleString()} | {article.source}
                   </small>
 
-                  {/* Audio player inside article (if present, outside expanded) */}
-                  <audio controls preload="metadata" style={{ width: '100%', marginTop: 10 }}>
-  <source src={article.audioUrlMp3} type="audio/mpeg" />
-  <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />
-  <source src={article.audioUrlWebm} type="audio/webm" />
-  Your browser does not support the audio element.
-</audio>
+                 {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
+  <audio controls style={{ width: '100%' }} preload="metadata" key={article.link + '-audio'}>
+    {article.audioUrlMp3 && (
+      <source src={article.audioUrlMp3} type="audio/mpeg" />
+    )}
+    {article.audioUrlOgg && (
+      <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />
+    )}
+    {article.audioUrlWebm && (
+      <source src={article.audioUrlWebm} type="audio/webm; codecs=opus" />
+    )}
+    {/* Generic audioUrl fallback - try guessing type based on extension */}
+    {article.audioUrl && !article.audioUrlMp3 && !article.audioUrlOgg && !article.audioUrlWebm && (
+      <>
+        {article.audioUrl.endsWith('.mp3') && (
+          <source src={article.audioUrl} type="audio/mpeg" />
+        )}
+        {article.audioUrl.endsWith('.ogg') && (
+          <source src={article.audioUrl} type="audio/ogg; codecs=opus" />
+        )}
+        {article.audioUrl.endsWith('.webm') && (
+          <source src={article.audioUrl} type="audio/webm; codecs=opus" />
+        )}
+        {/* Fallback without type if extension is unknown */}
+        {!article.audioUrl.match(/\.(mp3|ogg|webm)$/i) && (
+          <source src={article.audioUrl} />
+        )}
+      </>
+    )}
+    Your browser does not support the audio element.
+  </audio>
+) : (
+  loadingFullArticle ? <p>Loading full article...</p> :
+  <div dangerouslySetInnerHTML={{ __html: expandedContent }} />
+)}
 
                   {/* Read here button */}
                   <button
