@@ -3,7 +3,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import http from 'http';
 import https from 'https';
 
-const cache = new Map<string, Buffer>(); // Simple in-memory cache for files < 10MB
+type CacheEntry = {
+  buffer: Buffer;
+  contentType: string;
+  expiresAt: number;
+};
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+const MAX_CACHE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB max cache file size
+
+const cache = new Map<string, CacheEntry>();
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const { url } = req.query;
@@ -29,45 +38,54 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
+  const now = Date.now();
+
+  // Check cache entry and expiration
+  if (cache.has(decodedUrl)) {
+    const cached = cache.get(decodedUrl)!;
+    if (cached.expiresAt > now) {
+      const cachedData = cached.buffer;
+      const contentType = cached.contentType;
+      const range = req.headers.range || '';
+
+      if (range) {
+        const bytesPrefix = 'bytes=';
+        if (range.startsWith(bytesPrefix)) {
+          const bytesRange = range.substring(bytesPrefix.length).split('-');
+          const start = parseInt(bytesRange[0], 10);
+          const end = bytesRange[1] ? parseInt(bytesRange[1], 10) : cachedData.length - 1;
+
+          if (!isNaN(start) && !isNaN(end) && start <= end) {
+            const chunk = cachedData.slice(start, end + 1);
+            res.writeHead(206, {
+              'Content-Range': `bytes ${start}-${end}/${cachedData.length}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': chunk.length,
+              'Content-Type': contentType,
+            });
+            res.end(chunk);
+            return;
+          }
+        }
+      }
+
+      // No range or invalid range: serve full cached file
+      res.writeHead(200, {
+        'Content-Length': cachedData.length,
+        'Content-Type': contentType,
+        'Accept-Ranges': 'bytes',
+      });
+      res.end(cachedData);
+      return;
+    } else {
+      // Cache expired, delete it
+      cache.delete(decodedUrl);
+    }
+  }
+
   const client = targetUrl.protocol === 'https:' ? https : http;
   const range = req.headers.range || '';
 
-  // Serve from cache if available
-  if (cache.has(decodedUrl)) {
-    const cachedData = cache.get(decodedUrl)!;
-
-    if (range) {
-      const bytesPrefix = 'bytes=';
-      if (range.startsWith(bytesPrefix)) {
-        const bytesRange = range.substring(bytesPrefix.length).split('-');
-        const start = parseInt(bytesRange[0], 10);
-        const end = bytesRange[1] ? parseInt(bytesRange[1], 10) : cachedData.length - 1;
-
-        if (!isNaN(start) && !isNaN(end) && start <= end) {
-          const chunk = cachedData.slice(start, end + 1);
-          res.writeHead(206, {
-            'Content-Range': `bytes ${start}-${end}/${cachedData.length}`,
-            'Accept-Ranges': 'bytes',
-            'Content-Length': chunk.length,
-            'Content-Type': 'audio/mpeg', // Adjust MIME type if needed
-          });
-          res.end(chunk);
-          return;
-        }
-      }
-    }
-
-    // No or invalid Range header: send full file
-    res.writeHead(200, {
-      'Content-Length': cachedData.length,
-      'Content-Type': 'audio/mpeg', // Adjust MIME type if needed
-      'Accept-Ranges': 'bytes',
-    });
-    res.end(cachedData);
-    return;
-  }
-
-  // Not cached: proxy request with Range header
   const options = {
     headers: {
       Range: range,
@@ -76,11 +94,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const proxyReq = client.get(targetUrl, options, (proxyRes) => {
     const statusCode = proxyRes.statusCode || 200;
-
     const contentLength = parseInt(proxyRes.headers['content-length'] || '0', 10);
+    const contentType = proxyRes.headers['content-type'] || 'audio/mpeg';
 
-    if (contentLength > 0 && contentLength < 10 * 1024 * 1024) {
-      // Cache small files (<10MB)
+    if (contentLength > 0 && contentLength <= MAX_CACHE_SIZE_BYTES) {
+      // Cache small files with TTL
       const chunks: Buffer[] = [];
       res.writeHead(statusCode, proxyRes.headers);
 
@@ -91,7 +109,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
       proxyRes.on('end', () => {
         const fullBuffer = Buffer.concat(chunks);
-        cache.set(decodedUrl, fullBuffer);
+        cache.set(decodedUrl, {
+          buffer: fullBuffer,
+          contentType,
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        });
         res.end();
       });
 
@@ -102,7 +124,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       });
     } else {
-      // Large files: stream without caching
+      // Large files or unknown length: stream without caching
       res.writeHead(statusCode, proxyRes.headers);
       proxyRes.pipe(res);
     }
