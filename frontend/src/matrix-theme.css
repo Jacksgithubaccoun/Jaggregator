@@ -1,11 +1,18 @@
 /* matrix-theme.css */
-body, html, #root {
+html, body, #root {
   height: 100%;
   margin: 0;
-  background-color: #000; /* black background */
-  color: #0f0; /* bright green text */
-  font-family: 'Courier New', Courier, monospace; /* monospace font */
-  overflow-y: auto; /* avoid scrollbars from animation */
+  background-color: #000;
+  color: #0f0;
+  font-family: 'Courier New', Courier, monospace;
+  overflow-x: hidden; /* 🔧 Prevent horizontal scroll */
+  overflow-y: auto;
+}
+
+* {
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 h1, p, button, input {
@@ -20,8 +27,6 @@ button, input {
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  /* add box-sizing for consistent padding */
-  box-sizing: border-box;
 }
 
 button:hover {
@@ -29,7 +34,6 @@ button:hover {
   color: #000;
 }
 
-/* Optional: glowing effect */
 @keyframes glow {
   0%, 100% {
     text-shadow: 0 0 5px #0f0, 0 0 10px #0f0;
@@ -41,5 +45,4 @@ button:hover {
 
 h1 {
   animation: glow 2s infinite ease-in-out;
-  margin: 0; /* optional, remove default h1 margin for cleaner layout */
 }
