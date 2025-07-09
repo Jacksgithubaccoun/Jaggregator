@@ -218,7 +218,13 @@ const Home: React.FC = () => {
 
       <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
         <h1 style={styles.title}>Jaggregator</h1>
-
+        
+         <FeedsManager
+    feeds={feeds}
+    onAddFeed={addFeed}
+    onRemoveFeed={removeFeed}
+    disabled={loading}
+  />
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
             type="text"
