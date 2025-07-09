@@ -226,7 +226,26 @@ const Home: React.FC = () => {
                     {expandedArticle === article.link && !loadingFullArticle && expanded && (
                       <>
                         {Object.values(expanded.audioSources).some(Boolean) && <AudioPlayer audioSources={expanded.audioSources} />}
-                        <article style={{ marginTop: 10, maxHeight: 300, overflowY: 'auto', backgroundColor: '#111', padding: 10, borderRadius: 4, color: '#ccc' }} dangerouslySetInnerHTML={{ __html: expanded.content }} />
+                        <article
+  style={{
+    marginTop: 20,
+    maxWidth: '600px',
+    width: '100%',
+    maxHeight: 400,
+    overflowY: 'auto',
+    backgroundColor: '#111',
+    padding: '20px 25px',
+    borderRadius: 6,
+    color: '#ccc',
+    fontSize: '16px',
+    lineHeight: 1.6,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    boxSizing: 'border-box',
+    fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+  }}
+  dangerouslySetInnerHTML={{ __html: expandedContent }}
+/>
                         {expanded.transcript && <pre style={{ marginTop: 10, backgroundColor: '#000', padding: 10, color: '#0f0', fontSize: 12 }}>{expanded.transcript}</pre>}
                       </>
                     )}
@@ -253,7 +272,6 @@ const Home: React.FC = () => {
     </>
   );
 };
-
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
@@ -348,6 +366,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 };
+
 
 export default Home;
 
