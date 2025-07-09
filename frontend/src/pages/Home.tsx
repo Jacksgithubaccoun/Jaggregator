@@ -200,8 +200,14 @@ const Home: React.FC = () => {
           zIndex: 10,
         }}
       >
-        <FeedsManager feeds={feeds} addFeed={addFeed} removeFeed={removeFeed} />
-
+        <FeedsManager
+  feeds={feeds}
+  addFeed={addFeed}
+  removeFeed={removeFeed}
+  loading={loading}
+  error={error}
+  clearError={clearError}
+/>
 <section style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
   <input
     type="text"
