@@ -57,6 +57,8 @@ const Home: React.FC = () => {
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string>('');
 
+    const clearError = () => setError('');
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setTypedKeys((prev) => {
@@ -225,6 +227,7 @@ const Home: React.FC = () => {
   removeFeed={removeFeed}
   loading={loading}
   error={error}
+  clearError={clearError}        
 />
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
