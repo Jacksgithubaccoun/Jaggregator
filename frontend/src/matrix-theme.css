@@ -20,6 +20,8 @@ button, input {
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
+  /* add box-sizing for consistent padding */
+  box-sizing: border-box;
 }
 
 button:hover {
@@ -39,4 +41,5 @@ button:hover {
 
 h1 {
   animation: glow 2s infinite ease-in-out;
+  margin: 0; /* optional, remove default h1 margin for cleaner layout */
 }
