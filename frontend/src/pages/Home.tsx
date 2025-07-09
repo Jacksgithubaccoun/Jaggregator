@@ -276,7 +276,7 @@ const Home: React.FC = () => {
           )}
           <ul style={styles.articleList}>
             {visibleArticles.map((article, idx) => {
-              const key = article.link || article-${idx};
+              const key = article.link || `article-${idx}`;
               return (
                 <li key={key} style={styles.articleItem}>
                   <img
