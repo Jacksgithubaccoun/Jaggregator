@@ -323,14 +323,14 @@ const Home: React.FC = () => {
                       {expandedArticle === article.link ? 'Collapse' : 'Expand'}
                     </button>
 
-                    {(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
-                      <AudioPlayer
-                        audioUrl={article.audioUrl}
-                        audioUrlMp3={article.audioUrlMp3}
-                        audioUrlOgg={article.audioUrlOgg}
-                        audioUrlWebm={article.audioUrlWebm}
-                      />
-                    )}
+                    {expandedArticle === article.link && (article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
+  <AudioPlayer
+    audioUrl={article.audioUrl}
+    audioUrlMp3={article.audioUrlMp3}
+    audioUrlOgg={article.audioUrlOgg}
+    audioUrlWebm={article.audioUrlWebm}
+  />
+)}
 
                     {expandedArticle === article.link &&
                       !loadingFullArticle &&
