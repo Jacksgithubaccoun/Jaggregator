@@ -1,3 +1,4 @@
+// src/pages/Home.tsx
 import React, { useEffect, useState } from 'react';
 import FeedsManager from '../components/FeedsManager';
 import MatrixRain from '../components/MatrixRain';
@@ -5,8 +6,22 @@ import '../matrix-theme.css';
 
 const allTags = ['audio', 'article', 'left wing', 'right wing', 'alternative'];
 
-function AudioPlayer({ audioSources }: { audioSources: Record<string, string> }) {
+function AudioPlayer({
+  audioUrlMp3,
+  audioUrlOgg,
+  audioUrlWebm,
+  audioUrl,
+}: {
+  audioUrlMp3?: string | null;
+  audioUrlOgg?: string | null;
+  audioUrlWebm?: string | null;
+  audioUrl?: string | null;
+}) {
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+  }, [audioUrlMp3, audioUrlOgg, audioUrlWebm, audioUrl]);
 
   return (
     <>
@@ -17,10 +32,10 @@ function AudioPlayer({ audioSources }: { audioSources: Record<string, string> })
         onCanPlay={() => setLoading(false)}
         onError={() => setLoading(false)}
       >
-        {audioSources.mp3 && <source src={audioSources.mp3} type="audio/mpeg" />}
-        {audioSources.ogg && <source src={audioSources.ogg} type="audio/ogg; codecs=opus" />}
-        {audioSources.webm && <source src={audioSources.webm} type="audio/webm" />}
-        {audioSources.fallback && !audioSources.fallback.match(/\.(mp3|ogg|webm)$/i) && <source src={audioSources.fallback} />}
+        {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
+        {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
+        {audioUrlWebm && <source src={audioUrlWebm} type="audio/webm" />}
+        {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
         Your browser does not support the audio element.
       </audio>
     </>
@@ -39,15 +54,10 @@ const Home: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(10);
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
-
-  const [expandedContent, setExpandedContent] = useState<Record<
-    string,
-    { content: string; audioSources: Record<string, string>; transcript: string }
-  >>({});
-
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
+  const [expandedContent, setExpandedContent] = useState<string>('');
 
-  const clearError = () => setError('');
+    const clearError = () => setError('');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -65,31 +75,32 @@ const Home: React.FC = () => {
   }, []);
 
   const addFeed = async (url: string): Promise<void> => {
-  if (feeds.includes(url)) return;
-  setLoading(true);
-  clearError();
-  try {
-    // Simulate or do any async validation/fetch if needed here
-    setFeeds((prev) => [...prev, url]);
-  } catch (e) {
-    setError('Failed to add feed');
-  } finally {
-    setLoading(false);
-  }
-};
+    if (feeds.includes(url)) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
+      if (!res.ok) throw new Error('Failed to fetch feed articles');
+      const data = await res.json();
 
-const removeFeed = async (url: string): Promise<void> => {
-  setLoading(true);
-  clearError();
-  try {
+      const newArticles = data.articles.filter(
+        (newArticle: any) => !articles.some((a) => a.link === newArticle.link)
+      );
+
+      setFeeds((prev) => [...prev, url]);
+      setArticles((prev) => [...prev, ...newArticles]);
+    } catch {
+      setError('Failed to add feed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFeed = async (url: string): Promise<void> => {
     setFeeds((prev) => prev.filter((f) => f !== url));
     setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
-  } catch (e) {
-    setError('Failed to remove feed');
-  } finally {
-    setLoading(false);
-  }
-};
+    return Promise.resolve();
+  };
 
   useEffect(() => {
     const loadFeeds = async () => {
@@ -100,7 +111,7 @@ const removeFeed = async (url: string): Promise<void> => {
         const articlesArrays = await Promise.all(
           savedFeeds.map(async (url) => {
             try {
-              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+              const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
               if (!res.ok) return [];
               const data = await res.json();
               return data.articles || [];
@@ -154,47 +165,47 @@ const removeFeed = async (url: string): Promise<void> => {
 
   const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
-  const expandArticle = async (link: string) => {
-    if (expandedArticle === link) {
-      setExpandedArticle(null);
+  useEffect(() => {
+    if (!expandedArticle) {
+      setExpandedContent('');
+      setLoadingFullArticle(false);
       return;
     }
 
-    setExpandedArticle(link);
+    const selected = articles.find((a) => a.link === expandedArticle);
 
-    if (!expandedContent[link]) {
+    if (
+      selected?.audioUrl ||
+      selected?.audioUrlMp3 ||
+      selected?.audioUrlOgg ||
+      selected?.audioUrlWebm
+    ) {
+      setExpandedContent('');
+      setLoadingFullArticle(false);
+      return;
+    }
+
+    const fetchFullArticle = async () => {
       setLoadingFullArticle(true);
       try {
-        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(link)}`);
+        const res = await fetch(/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)});
         if (!res.ok) throw new Error('Failed to load full article');
         const data = await res.json();
-        setExpandedContent((prev) => ({
-          ...prev,
-          [link]: {
-            content: data.content || 'No content available.',
-            audioSources: {
-              mp3: data.audioUrlMp3 || '',
-              ogg: data.audioUrlOgg || '',
-              webm: data.audioUrlWebm || '',
-              fallback: data.audioUrl || '',
-            },
-            transcript: data.transcript || '',
-          },
-        }));
+        setExpandedContent(data.content || 'No content available.');
       } catch {
-        setExpandedContent((prev) => ({
-          ...prev,
-          [link]: { content: 'Failed to load full article.', audioSources: {}, transcript: '' },
-        }));
+        setExpandedContent('Failed to load full article.');
       } finally {
         setLoadingFullArticle(false);
       }
-    }
-  };
+    };
+
+    fetchFullArticle();
+  }, [expandedArticle, articles]);
 
   return (
     <>
       <MatrixRain />
+
       <div
         style={{
           position: 'fixed',
@@ -206,243 +217,142 @@ const removeFeed = async (url: string): Promise<void> => {
           zIndex: 5,
         }}
       />
-      <main
-        style={{
-          maxWidth: 900,
-          margin: '20px auto',
-          padding: 16,
-          color: '#ccc',
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
+
+      <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
+        <h1 style={styles.title}>Jaggregator</h1>
+        
         <FeedsManager
   feeds={feeds}
   addFeed={addFeed}
   removeFeed={removeFeed}
   loading={loading}
   error={error}
-  clearError={clearError}
+  clearError={clearError}        
 />
-<section style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-  <input
-    type="text"
-    placeholder="Search title or description..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    style={{
-      padding: 8,
-      backgroundColor: '#111',
-      color: '#eee',
-      border: '1px solid #555',
-      borderRadius: 4,
-    }}
-  />
-  <input
-    type="text"
-    placeholder="Filter by source..."
-    value={sourceFilter}
-    onChange={(e) => setSourceFilter(e.target.value)}
-    style={{
-      padding: 8,
-      backgroundColor: '#111',
-      color: '#eee',
-      border: '1px solid #555',
-      borderRadius: 4,
-    }}
-  />
-</section>
-        <section style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-  {allTags.map((tag) => (
-    <button
-      key={tag}
-      onClick={() => toggleTag(tag)}
-      style={{
-        backgroundColor: selectedTags.includes(tag) ? '#0f0' : '#333',
-        border: '1px solid #555',
-        borderRadius: 4,
-        color: selectedTags.includes(tag) ? '#000' : '#ccc',
-        padding: '6px 12px',
-        cursor: 'pointer',
-        fontWeight: selectedTags.includes(tag) ? 'bold' : 'normal',
-      }}
-      disabled={loading}
-    >
-      {tag}
-    </button>
-  ))}
-</section>
+        <section aria-label="Search articles" style={styles.controlsContainer}>
+          <input
+            type="text"
+            placeholder="Search articles..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.input}
+            disabled={loading}
+          />
+          <input
+            type="text"
+            placeholder="Filter by source name..."
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            style={{ ...styles.input, marginTop: 8 }}
+            disabled={loading}
+          />
+        </section>
 
-{loading && (
-  <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic', color: '#ccc' }}>
-    Loading articles...
-  </p>
-)}
+        <section aria-label="Filter articles by tag" style={styles.tagsContainer}>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => toggleTag(tag)}
+              style={{
+                ...styles.tagButton,
+                ...(selectedTags.includes(tag) ? styles.tagButtonActive : {}),
+              }}
+              aria-pressed={selectedTags.includes(tag)}
+              disabled={loading}
+            >
+              {tag}
+            </button>
+          ))}
+        </section>
 
-{!loading && error && (
-  <p
-    style={{
-      textAlign: 'center',
-      marginTop: 16,
-      fontStyle: 'italic',
-      color: '#f66',
-    }}
-  >
-    {error}
-  </p>
-)}
+        {loading && <p style={styles.statusText}>Loading articles...</p>}
+        {!loading && error && (
+          <p role="alert" style={{ ...styles.statusText, color: '#f66' }}>{error}</p>
+        )}
 
-<section>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+        <section aria-label="News articles" style={styles.articlesSection}>
+          {filteredArticles.length === 0 && !loading && !error && (
+            <p style={styles.statusText}>No articles found.</p>
+          )}
+          <ul style={styles.articleList}>
             {visibleArticles.map((article, idx) => {
-              const key = article.link || `article-${idx}`;
-              const expanded = expandedContent[article.link] || null;
+              const key = article.link || article-${idx};
               return (
-                <li
-                  key={key}
-                  style={{
-                    display: 'flex',
-                    gap: 12,
-                    padding: 12,
-                    borderBottom: '1px solid #444',
-                    flexDirection: 'column',
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <img
-                      src={article.thumbnail || '/images/fallback.png'}
-                      alt="thumbnail"
+                <li key={key} style={styles.articleItem}>
+                  <img
+                    src={article.thumbnail || '/images/fallback.png'}
+                    alt={${article.source || 'News'} logo}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/images/fallback.png';
+                    }}
+                    style={styles.thumbnail}
+                  />
+                  <div style={styles.articleContent}>
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.articleTitle}
+                    >
+                      {article.title}
+                    </a>
+                    <p style={styles.articleDescription}>{article.description}</p>
+                    <small style={styles.articleMeta}>
+                      {new Date(article.pubDate).toLocaleString()} | {article.source}
+                    </small>
+
+                    <button
+                      onClick={() =>
+                        setExpandedArticle(
+                          expandedArticle === article.link ? null : article.link
+                        )
+                      }
                       style={{
-                        width: 80,
-                        height: 80,
-                        objectFit: 'cover',
+                        marginRight: 10,
+                        marginTop: 6,
+                        cursor: 'pointer',
+                        background: '#444',
+                        border: 'none',
+                        color: '#eee',
+                        padding: '6px 10px',
                         borderRadius: 4,
                       }}
-                      onError={(e) => (e.currentTarget.src = '/images/fallback.png')}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <a
-                        href={article.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          color: '#0f0',
-                          fontWeight: 'bold',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        {article.title}
-                      </a>
-                      <p
-                        style={{
-                          marginTop: 4,
-                          fontSize: 12,
-                          color: '#888',
-                        }}
-                      >
-                        {new Date(article.pubDate).toLocaleString()} |{' '}
-                        {article.source || 'Unknown source'}
-                      </p>
-                      <p
-                        style={{
-                          marginTop: 6,
-                          fontSize: 14,
-                          color: '#ccc',
-                        }}
-                      >
-                        {article.description}
-                      </p>
-                      <div
-                        style={{
-                          marginTop: 8,
-                          display: 'flex',
-                          gap: 8,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        {article.tags?.map((tag: string) => (
-                          <span
-                            key={tag}
-                            style={{
-                              backgroundColor: '#222',
-                              border: '1px solid #555',
-                              borderRadius: 3,
-                              padding: '2px 6px',
-                              fontSize: 11,
-                              color: '#0f0',
-                              cursor: 'default',
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => expandArticle(article.link)}
-                        style={{
-                          marginTop: 10,
-                          backgroundColor: '#111',
-                          color: '#0f0',
-                          border: '1px solid #0f0',
-                          padding: '6px 12px',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {expandedArticle === article.link ? 'Collapse' : 'Read More'}
-                      </button>
-                      {expandedArticle === article.link && (
-                        <div
+                      aria-expanded={expandedArticle === article.link}
+                    >
+                      {expandedArticle === article.link ? 'Collapse' : 'Expand'}
+                    </button>
+
+                    {(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
+                      <AudioPlayer
+                        audioUrl={article.audioUrl}
+                        audioUrlMp3={article.audioUrlMp3}
+                        audioUrlOgg={article.audioUrlOgg}
+                        audioUrlWebm={article.audioUrlWebm}
+                      />
+                    )}
+
+                    {expandedArticle === article.link &&
+                      !loadingFullArticle &&
+                      expandedContent &&
+                      !(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
+                        <article
                           style={{
-                            marginTop: 12,
+                            marginTop: 10,
+                            maxHeight: 300,
+                            overflowY: 'auto',
                             backgroundColor: '#111',
-                            padding: 16,
-                            borderRadius: 6,
+                            padding: 10,
+                            borderRadius: 4,
                             color: '#ccc',
-                            maxWidth: '100%',
-                            overflowWrap: 'break-word',
                           }}
-                        >
-                          {loadingFullArticle && !expanded ? (
-                            <p>Loading full article...</p>
-                          ) : expanded ? (
-                            <>
-                              <div
-                                dangerouslySetInnerHTML={{ __html: expanded.content }}
-                                style={{ marginBottom: 12 }}
-                              />
-                              {Object.values(expanded.audioSources).some(Boolean) && (
-                                <AudioPlayer audioSources={expanded.audioSources} />
-                              )}
-                              {expanded.transcript && (
-                                <details style={{ marginTop: 12 }}>
-                                  <summary style={{ cursor: 'pointer' }}>
-                                    Show Transcript
-                                  </summary>
-                                  <pre
-                                    style={{
-                                      whiteSpace: 'pre-wrap',
-                                      marginTop: 8,
-                                      fontSize: 13,
-                                      backgroundColor: '#222',
-                                      padding: 8,
-                                      borderRadius: 4,
-                                      maxHeight: 200,
-                                      overflowY: 'auto',
-                                      color: '#ccc',
-                                    }}
-                                  >
-                                    {expanded.transcript}
-                                  </pre>
-                                </details>
-                              )}
-                            </>
-                          ) : (
-                            <p>No full article content available.</p>
-                          )}
-                        </div>
+                          dangerouslySetInnerHTML={{ __html: expandedContent }}
+                        />
                       )}
-                    </div>
+
+                    {loadingFullArticle && expandedArticle === article.link && (
+                      <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
+                    )}
                   </div>
                 </li>
               );
@@ -450,36 +360,33 @@ const removeFeed = async (url: string): Promise<void> => {
           </ul>
           {visibleCount < filteredArticlesSorted.length && (
             <button
-              onClick={() => setVisibleCount((c) => c + 10)}
-              style={{
-                marginTop: 16,
-                padding: '8px 16px',
-                backgroundColor: '#0f0',
-                border: 'none',
-                borderRadius: 4,
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                color: '#000',
-              }}
+              onClick={() => setVisibleCount((v) => v + 10)}
+              style={styles.loadMoreButton}
+              disabled={loading}
             >
               Load More
             </button>
           )}
         </section>
+
         {showSecret && (
           <section
             style={{
-              marginTop: 32,
-              backgroundColor: '#222',
-              padding: 16,
-              borderRadius: 6,
-              textAlign: 'center',
+              position: 'fixed',
+              bottom: 10,
+              right: 10,
+              backgroundColor: 'rgba(0,0,0,0.8)',
               color: '#0f0',
-              fontWeight: 'bold',
-              fontSize: 16,
+              padding: 10,
+              borderRadius: 6,
+              zIndex: 9999,
+              maxWidth: 320,
+              fontSize: 12,
+              fontFamily: 'monospace',
             }}
+            aria-live="polite"
           >
-            Secret mode activated: The powers that be.
+            <strong>Secret activated:</strong> The Powers That Be
           </section>
         )}
       </main>
@@ -580,7 +487,3 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 };
-
-
-export default Home;
-
