@@ -204,27 +204,26 @@ const Home: React.FC = () => {
   }, [expandedArticle, articles]);
 
   <>
-  <MatrixRain />
+ return (
+    <>
+      <MatrixRain />
 
-  {/* Opaque dark background for readability */}
-  <div
-    style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      zIndex: 5,
-    }}
-  />
+      {/* Opaque dark background for readability */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          zIndex: 5,
+        }}
+      />
 
-  {/* UI content above the dark layer */}
-  <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
-    <h1 style={styles.title}>Jaggregator</h1>
-    {/* rest of your UI as-is */}
-  </main>
-</>
+      {/* UI content above the dark layer */}
+      <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
+        <h1 style={styles.title}>Jaggregator</h1>
 
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
@@ -331,22 +330,28 @@ const Home: React.FC = () => {
                       />
                     ) : null}
 
-                    {expandedArticle === article.link && !loadingFullArticle && expandedContent && !(
-                      article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm
-                    ) && (
-                      <article
-                        style={{
-                          marginTop: 10,
-                          maxHeight: 300,
-                          overflowY: 'auto',
-                          backgroundColor: '#111',
-                          padding: 10,
-                          borderRadius: 4,
-                          color: '#ccc',
-                        }}
-                        dangerouslySetInnerHTML={{ __html: expandedContent }}
-                      />
-                    )}
+                    {expandedArticle === article.link &&
+                      !loadingFullArticle &&
+                      expandedContent &&
+                      !(
+                        article.audioUrl ||
+                        article.audioUrlMp3 ||
+                        article.audioUrlOgg ||
+                        article.audioUrlWebm
+                      ) && (
+                        <article
+                          style={{
+                            marginTop: 10,
+                            maxHeight: 300,
+                            overflowY: 'auto',
+                            backgroundColor: '#111',
+                            padding: 10,
+                            borderRadius: 4,
+                            color: '#ccc',
+                          }}
+                          dangerouslySetInnerHTML={{ __html: expandedContent }}
+                        />
+                      )}
 
                     {loadingFullArticle && expandedArticle === article.link && (
                       <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
