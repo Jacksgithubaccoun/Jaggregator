@@ -65,15 +65,31 @@ const Home: React.FC = () => {
   }, []);
 
   const addFeed = async (url: string): Promise<void> => {
-    if (feeds.includes(url)) return;
+  if (feeds.includes(url)) return;
+  setLoading(true);
+  clearError();
+  try {
+    // Simulate or do any async validation/fetch if needed here
     setFeeds((prev) => [...prev, url]);
-  };
+  } catch (e) {
+    setError('Failed to add feed');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const removeFeed = async (url: string): Promise<void> => {
+const removeFeed = async (url: string): Promise<void> => {
+  setLoading(true);
+  clearError();
+  try {
     setFeeds((prev) => prev.filter((f) => f !== url));
     setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
-    return Promise.resolve();
-  };
+  } catch (e) {
+    setError('Failed to remove feed');
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const loadFeeds = async () => {
