@@ -17,8 +17,7 @@ const MatrixRain: React.FC = () => {
     canvas.width = width;
     canvas.height = height;
 
-    // Extended character set:
-    // Latin letters, numbers, symbols + Hiragana, Katakana, some Kanji, and some misc symbols (as "wingdings-like")
+    // Extended character set without wingdings:
     const letters = [
       ...'abcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:,.<>?'.split(''),
 
@@ -28,11 +27,8 @@ const MatrixRain: React.FC = () => {
       // Katakana (Unicode range 30A0–30FF)
       ...Array.from({ length: 96 }, (_, i) => String.fromCharCode(0x30A0 + i)),
 
-      // Some common Kanji (just picking a few from 4E00–9FBF)
+      // Some common Kanji
       '日','本','語','水','火','金','土','木','人','大','中','小','山','川','田','天',
-
-      // Misc symbols resembling "wingdings" / dingbats (some Unicode blocks)
-      ...['✈', '✉', '☎', '☢', '☣', '☯', '☮', '♠', '♣', '♥', '♦', '♛', '☘', '⚡', '☀', '☁', '☂', '☃', '⚓', '⚔']
     ];
 
     const fontSize = 16;
@@ -45,11 +41,10 @@ const MatrixRain: React.FC = () => {
     const draw = () => {
       if (!ctx) return;
 
-      // Semi-transparent background for trailing effect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, width, height);
 
-      ctx.fillStyle = '#0F0'; // bright green
+      ctx.fillStyle = '#0F0';
       ctx.font = `${fontSize}px monospace`;
 
       for (let i = 0; i < drops.length; i++) {
@@ -73,10 +68,10 @@ const MatrixRain: React.FC = () => {
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
-      // reset columns and drops
+
       const newColumns = Math.floor(width / fontSize);
       drops.length = newColumns;
-      for(let i = 0; i < newColumns; i++) {
+      for (let i = 0; i < newColumns; i++) {
         if (!drops[i]) drops[i] = 1;
       }
     };
@@ -98,7 +93,7 @@ const MatrixRain: React.FC = () => {
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 0,
+        zIndex: -10,
         pointerEvents: 'none',
         backgroundColor: 'black',
       }}
@@ -106,5 +101,5 @@ const MatrixRain: React.FC = () => {
   );
 };
 
-export default MatrixRain;
+export default MatrixRain;trixRain;
 
