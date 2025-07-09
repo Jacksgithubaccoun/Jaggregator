@@ -1,83 +1,64 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import Parser from 'rss-parser';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
+import Parser from 'rss-parser';
 
 const parser = new Parser();
 
-type CachedData = {
-  timestamp: number;
-  data: any;
-};
-const cache: Record<string, CachedData> = {};
-const CACHE_TTL = 600000; // 10 minutes in ms
-const MAX_ARTICLES = 5;
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { Url } = req.query;
-
-  if (!Url || typeof Url !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid Url parameter' });
-  }
-
-  // Check cache
-  const cached = cache[Url];
-  const now = Date.now();
-  if (cached && now - cached.timestamp < CACHE_TTL) {
-    return res.status(200).json(cached.data);
+  const { url } = req.query;
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'Missing URL' });
   }
 
   try {
     // Parse RSS feed
-    const feed = await parser.parseURL(Url);
+    const feed = await parser.parseURL(url);
 
-    // Limit articles for performance
-    const items = feed.items.slice(0, MAX_ARTICLES);
-
-    // Fetch and parse full articles concurrently (with error handling)
+    // For each item, fetch full article content
     const articles = await Promise.all(
-      items.map(async (item) => {
+      feed.items.map(async (item) => {
         if (!item.link) return null;
 
         try {
           const response = await fetch(item.link);
-          if (!response.ok) throw new Error('Failed to fetch article');
-
           const html = await response.text();
           const dom = new JSDOM(html, { url: item.link });
           const reader = new Readability(dom.window.document);
           const article = reader.parse();
 
           return {
-            title: item.title || '',
+            title: article?.title || item.title || 'No title',
+            content: article?.content || '<p>No content available</p>',
             link: item.link,
             pubDate: item.pubDate || '',
-            content: article?.content || '',
-            excerpt: article?.excerpt || '',
+            source: feed.title || '',
+            thumbnail: item.enclosure?.url || '', // optional
+            description: item.contentSnippet || '',
+            tags: [], // optional, could extract if available
           };
-        } catch (error) {
+        } catch {
+          // Return fallback if fetch fails for an article
           return {
-            title: item.title || '',
+            title: item.title || 'No title',
+            content: '<p>Failed to load article content.</p>',
             link: item.link,
             pubDate: item.pubDate || '',
-            content: '',
-            excerpt: '',
-            error: 'Failed to fetch or parse article',
+            source: feed.title || '',
+            thumbnail: '',
+            description: item.contentSnippet || '',
+            tags: [],
           };
         }
       })
     );
 
-    const result = { articles: articles.filter(Boolean) };
+    // Filter out nulls if any
+    const filteredArticles = articles.filter(Boolean);
 
-    // Cache the result
-    cache[Url] = {
-      timestamp: now,
-      data: result,
-    };
-
-    res.status(200).json(result);
+    res.status(200).json({ articles: filteredArticles });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
   }
 }
+
