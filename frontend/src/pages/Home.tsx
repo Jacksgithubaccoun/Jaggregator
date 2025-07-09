@@ -114,10 +114,10 @@ const Home: React.FC = () => {
   };
 
   // Remove a feed and its articles
-  const removeFeed = (url: string) => {
-    setFeeds((prev) => prev.filter((f) => f !== url));
-    setArticles((prev) => prev.filter((a) => a.source !== url && a.link !== url));
-  };
+  const removeFeed = async (url: string): Promise<void> => {
+  setFeeds((prev) => prev.filter((f) => f !== url));
+  setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
+};
 
   // Toggle tags filter
   const toggleTag = (tag: string) => {
