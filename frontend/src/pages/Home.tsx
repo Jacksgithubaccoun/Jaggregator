@@ -313,9 +313,9 @@ const Home: React.FC = () => {
       borderRadius: 8,
       border: '1px solid #333',
       maxWidth: '100%',
-      overflowX: 'auto',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
+      overflowX: 'auto' as const,
+      whiteSpace: 'pre-wrap' as const,
+      wordBreak: 'break-word' as const,
     }}
   >
     {article.audioUrl ? (
