@@ -25,11 +25,7 @@ function AudioPlayer({
 
   return (
     <>
-      {loading && (
-        <div style={{ color: '#ccc', marginBottom: 8 }}>
-          Loading audio...
-        </div>
-      )}
+      {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
       <audio
         controls
         style={{ width: '100%' }}
@@ -56,10 +52,8 @@ const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(10);
-
   const [typedKeys, setTypedKeys] = useState('');
   const [showSecret, setShowSecret] = useState(false);
-
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string>('');
 
@@ -105,8 +99,6 @@ const Home: React.FC = () => {
     setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
     return Promise.resolve();
   };
-
-  const clearError = () => setError('');
 
   useEffect(() => {
     const loadFeeds = async () => {
@@ -180,7 +172,12 @@ const Home: React.FC = () => {
 
     const selected = articles.find((a) => a.link === expandedArticle);
 
-    if (selected?.audioUrl || selected?.audioUrlMp3 || selected?.audioUrlOgg || selected?.audioUrlWebm) {
+    if (
+      selected?.audioUrl ||
+      selected?.audioUrlMp3 ||
+      selected?.audioUrlOgg ||
+      selected?.audioUrlWebm
+    ) {
       setExpandedContent('');
       setLoadingFullArticle(false);
       return;
@@ -189,7 +186,7 @@ const Home: React.FC = () => {
     const fetchFullArticle = async () => {
       setLoadingFullArticle(true);
       try {
-        const res = await fetch(`./api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
         if (!res.ok) throw new Error('Failed to load full article');
         const data = await res.json();
         setExpandedContent(data.content || 'No content available.');
@@ -203,12 +200,10 @@ const Home: React.FC = () => {
     fetchFullArticle();
   }, [expandedArticle, articles]);
 
-  <>
- return (
+  return (
     <>
       <MatrixRain />
 
-      {/* Opaque dark background for readability */}
       <div
         style={{
           position: 'fixed',
@@ -221,7 +216,6 @@ const Home: React.FC = () => {
         }}
       />
 
-      {/* UI content above the dark layer */}
       <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
         <h1 style={styles.title}>Jaggregator</h1>
 
@@ -263,9 +257,7 @@ const Home: React.FC = () => {
 
         {loading && <p style={styles.statusText}>Loading articles...</p>}
         {!loading && error && (
-          <p role="alert" style={{ ...styles.statusText, color: '#f66' }}>
-            {error}
-          </p>
+          <p role="alert" style={{ ...styles.statusText, color: '#f66' }}>{error}</p>
         )}
 
         <section aria-label="News articles" style={styles.articlesSection}>
@@ -321,24 +313,19 @@ const Home: React.FC = () => {
                       {expandedArticle === article.link ? 'Collapse' : 'Expand'}
                     </button>
 
-                    {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
+                    {(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
                       <AudioPlayer
                         audioUrl={article.audioUrl}
                         audioUrlMp3={article.audioUrlMp3}
                         audioUrlOgg={article.audioUrlOgg}
                         audioUrlWebm={article.audioUrlWebm}
                       />
-                    ) : null}
+                    )}
 
                     {expandedArticle === article.link &&
                       !loadingFullArticle &&
                       expandedContent &&
-                      !(
-                        article.audioUrl ||
-                        article.audioUrlMp3 ||
-                        article.audioUrlOgg ||
-                        article.audioUrlWebm
-                      ) && (
+                      !(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
                         <article
                           style={{
                             marginTop: 10,
@@ -492,3 +479,4 @@ const styles: Record<string, React.CSSProperties> = {
 };
 
 export default Home;
+
