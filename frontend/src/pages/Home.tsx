@@ -488,4 +488,4 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default HomePage;
+export default Home;
