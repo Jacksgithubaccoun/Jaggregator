@@ -95,7 +95,7 @@ const MatrixRain: React.FC = () => {
         height: '100%',
         zIndex: 0,
         pointerEvents: 'none',
-        backgroundColor: 'black',
+        backgroundColor: 'transparent',
       }}
     />
   );
