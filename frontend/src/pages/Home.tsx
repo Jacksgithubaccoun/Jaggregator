@@ -270,9 +270,10 @@ const Home: React.FC = () => {
           ))}
         </section>
         {loading && (
-          <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic' }}>
-            Loading articles...
-          </p>
+  <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic', color: '#ccc' }}>
+    Loading articles...
+  </p>
+)}
         )}
         {!loading && error && (
           <p
