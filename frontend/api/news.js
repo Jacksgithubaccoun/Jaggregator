@@ -1,57 +1,17 @@
+// pages/api/news.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
 import Parser from 'rss-parser';
+
 const parser = new Parser();
 
 let cache = {
   timestamp: 0,
-  data: null,
+  data: null as any | null,
 };
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export default async function handler(req, res) {
-  if (Date.now() - cache.timestamp < CACHE_DURATION && cache.data) {
-    return res.status(200).json(cache.data);
-  }
-
-  const rssFeeds = [
-    // You can get this from your feeds API or hardcoded for now
-    'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-  ];
-
-  let rssArticles = [];
-
-  try {
-    for (const feedUrl of rssFeeds) {
-      const feed = await parser.parseURL(feedUrl);
-      feed.items.forEach(item => {
-        rssArticles.push({
-          title: item.title,
-          link: item.link,
-          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
-          source: feed.title || 'RSS Feed',
-          description: item.contentSnippet || item.content || '',
-        });
-      });
-    }
-
-    // add your tags logic here...
-
-    const combined = rssArticles
-      .map(article => ({
-        ...article,
-        tags: detectTags(article),
-      }))
-      .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-    cache = { timestamp: Date.now(), data: combined };
-
-    res.status(200).json(combined);
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch news' });
-  }
-}
-
-const sourceBiasMap = {
+const sourceBiasMap: Record<string, string> = {
   // Left
   "nytimes.com": "left",
   "cnn.com": "left",
@@ -77,7 +37,7 @@ const sourceBiasMap = {
   "apnews.com": "center",
   "bbc.com": "center",
   "npr.org": "center",
-  "usatoday.com": "center", 
+  "usatoday.com": "center",
   "wsj.com": "center",
   "forbes.com": "center",
 
@@ -111,14 +71,73 @@ const sourceBiasMap = {
   "france24.com": "center",
 };
 
-const sourceThumbnailMap = {
-  'cnn.com': 'https://logo.clearbit.com/cnn.com',
-  'foxnews.com': 'https://logo.clearbit.com/foxnews.com',
-  'breitbart.com': 'https://logo.clearbit.com/breitbart.com',
-  'infowars.com': 'https://logo.clearbit.com/infowars.com',
-  'nytimes.com': 'https://logo.clearbit.com/nytimes.com',
-  'npr.org': 'https://logo.clearbit.com/npr.org',
-  'bbc.co.uk': 'https://logo.clearbit.com/bbc.co.uk',
-  'thegatewaypundit.com': 'https://logo.clearbit.com/thegatewaypundit.com',
-  'theatlantic.com': 'https://logo.clearbit.com/theatlantic.com',
-};
+function detectTags(article: any): string[] {
+  const tags: string[] = [];
+
+  if (
+    (article.title && article.title.toLowerCase().includes('podcast')) ||
+    (article.description && article.description.toLowerCase().includes('audio')) ||
+    (article.link && article.link.toLowerCase().endsWith('.mp3'))
+  ) {
+    tags.push('audio');
+  } else {
+    tags.push('article');
+  }
+
+  let domain = '';
+  try {
+    const url = new URL(article.link);
+    domain = url.hostname.replace('www.', '');
+  } catch {
+    domain = article.source?.toLowerCase() || '';
+  }
+
+  const bias = sourceBiasMap[domain];
+  if (bias) tags.push(bias);
+
+  return tags;
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (Date.now() - cache.timestamp < CACHE_DURATION && cache.data) {
+    return res.status(200).json(cache.data);
+  }
+
+  const rssFeeds: string[] = [
+    'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
+    // Add more RSS feed URLs here
+  ];
+
+  let rssArticles: any[] = [];
+
+  try {
+    for (const feedUrl of rssFeeds) {
+      const feed = await parser.parseURL(feedUrl);
+
+      feed.items.forEach(item => {
+        rssArticles.push({
+          title: item.title || 'No title',
+          link: item.link || '',
+          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+          source: feed.title || 'RSS Feed',
+          description: item.contentSnippet || item.content || '',
+          audioUrl: item.enclosure?.url || null,
+          audioType: item.enclosure?.type || null,
+        });
+      });
+    }
+
+    const combined = rssArticles
+      .map(article => ({
+        ...article,
+        tags: detectTags(article),
+      }))
+      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+
+    cache = { timestamp: Date.now(), data: combined };
+
+    res.status(200).json(combined);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch news' });
+  }
+}
