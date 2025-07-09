@@ -101,5 +101,5 @@ const MatrixRain: React.FC = () => {
   );
 };
 
-export default MatrixRain;trixRain;
+export default MatrixRain;MatrixRain;
 
