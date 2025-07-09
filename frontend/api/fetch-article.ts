@@ -3,7 +3,14 @@ import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import Parser from 'rss-parser';
 
-const parser = new Parser();
+const parser = new Parser({
+  customFields: {
+    item: [
+      ['itunes:transcript', 'transcript'], // pull transcript from itunes:transcript if available
+      ['itunes:summary', 'itunesSummary'], // optional fallback summary
+    ],
+  },
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { url } = req.query;
@@ -12,44 +19,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Parse RSS feed
     const feed = await parser.parseURL(url);
 
-    // For each item, fetch full article content or prepare podcast metadata
     const articles = await Promise.all(
       feed.items.map(async (item) => {
-        // Detect audio URL(s)
+        // Detect audio URLs from enclosure
         const audioUrlMp3 = item.enclosure?.type === 'audio/mpeg' ? item.enclosure.url : null;
         const audioUrlOgg = item.enclosure?.type === 'audio/ogg' ? item.enclosure.url : null;
         const audioUrlWebm = item.enclosure?.type === 'audio/webm' ? item.enclosure.url : null;
-
-        // Choose one audio URL to use in the player (prioritize mp3)
         const audioUrl = audioUrlMp3 || audioUrlOgg || audioUrlWebm;
 
-       if (audioUrl) {
-  // Try to get transcript from common fields
-  const transcript =
-    item['itunes:summary'] ||
-    item['itunes:subtitle'] ||
-    item.content ||
-    item.contentSnippet ||
-    item.summary ||
-    '';
+        // Extract transcript from itunes:transcript field or fallback to itunesSummary or empty
+        const transcript = item.transcript || item.itunesSummary || '';
 
-  return {
-    title: item.title || 'No title',
-    content: '', // no inline player by default
-    audioUrl,
-    transcript, // new field for transcript text
-    link: item.link || '',
-    pubDate: item.pubDate || '',
-    source: feed.title || '',
-    thumbnail: item.itunes?.image || feed.image?.url || '',
-    description: item.contentSnippet || item.summary || '',
-    tags: ['audio'],
-  };
-}
-        // Otherwise treat as article and fetch full content
+        if (audioUrl) {
+          return {
+            title: item.title || 'No title',
+            content: `<audio controls src="${audioUrl}"></audio>`,
+            audioUrl,
+            transcript,
+            link: item.link || '',
+            pubDate: item.pubDate || '',
+            source: feed.title || '',
+            thumbnail: item.itunes?.image || feed.image?.url || '',
+            description: item.contentSnippet || item.summary || '',
+            tags: ['audio'],
+          };
+        }
+
         if (!item.link) return null;
 
         try {
@@ -63,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             title: article?.title || item.title || 'No title',
             content: article?.content || '<p>No content available</p>',
             audioUrl: null,
+            transcript: '', // no transcript for regular articles
             link: item.link,
             pubDate: item.pubDate || '',
             source: feed.title || '',
@@ -75,6 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             title: item.title || 'No title',
             content: '<p>Failed to load article content.</p>',
             audioUrl: null,
+            transcript: '',
             link: item.link,
             pubDate: item.pubDate || '',
             source: feed.title || '',
