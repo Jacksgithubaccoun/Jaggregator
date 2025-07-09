@@ -188,7 +188,7 @@ const Home: React.FC = () => {
     const fetchFullArticle = async () => {
       setLoadingFullArticle(true);
       try {
-        const res = await fetch(/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)});
+        const res = await fetch('/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}');
         if (!res.ok) throw new Error('Failed to load full article');
         const data = await res.json();
         setExpandedContent(data.content || 'No content available.');
