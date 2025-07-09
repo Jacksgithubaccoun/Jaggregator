@@ -19,10 +19,32 @@ function AudioPlayer({
 }) {
   const [showPlayer, setShowPlayer] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+
+  const hasAudio =
+    !!audioUrlMp3 || !!audioUrlOgg || !!audioUrlWebm || !!audioUrl;
 
   const handleLoad = () => {
+    if (!hasAudio) return;
     setShowPlayer(true);
     setLoading(true);
+    setError(null);
+  };
+
+  const handleCanPlay = () => {
+    setLoading(false);
+  };
+
+  const handleError = () => {
+    setLoading(false);
+    setError('Failed to load audio.');
+  };
+
+  const handlePauseClick = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
   };
 
   return (
@@ -36,21 +58,27 @@ function AudioPlayer({
             border: 'none',
             padding: '6px 12px',
             borderRadius: 4,
-            cursor: 'pointer',
+            cursor: hasAudio ? 'pointer' : 'not-allowed',
             marginTop: 8,
+            opacity: hasAudio ? 1 : 0.5,
           }}
+          disabled={!hasAudio}
+          title={hasAudio ? undefined : 'No audio available'}
+          aria-disabled={!hasAudio}
         >
           ▶️ Load Audio
         </button>
       ) : (
         <>
           {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
+          {error && <div style={{ color: '#f66', marginBottom: 8 }}>{error}</div>}
           <audio
+            ref={audioRef}
             controls
             preload="none"
             style={{ width: '100%' }}
-            onCanPlay={() => setLoading(false)}
-            onError={() => setLoading(false)}
+            onCanPlay={handleCanPlay}
+            onError={handleError}
           >
             {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
             {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
@@ -58,6 +86,22 @@ function AudioPlayer({
             {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
             Your browser does not support the audio element.
           </audio>
+          {/* Optional: Pause button */}
+          <button
+            onClick={handlePauseClick}
+            style={{
+              background: '#666',
+              color: '#eee',
+              border: 'none',
+              padding: '4px 8px',
+              marginTop: 6,
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+            aria-label="Pause audio"
+          >
+            ⏸ Pause
+          </button>
         </>
       )}
     </>
