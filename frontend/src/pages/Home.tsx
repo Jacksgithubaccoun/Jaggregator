@@ -200,93 +200,47 @@ const Home: React.FC = () => {
           zIndex: 10,
         }}
       >
-        <h1 style={{ fontSize: 32, marginBottom: 16, textAlign: 'center' }}>Jaggregator</h1>
-        <FeedsManager
-          feeds={feeds}
-          addFeed={addFeed}
-          removeFeed={removeFeed}
-          loading={loading}
-          error={error}
-          clearError={clearError}
-        />
-        <section style={{ marginBottom: 16 }}>
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: 8,
-              background: '#222',
-              border: '1px solid #555',
-              borderRadius: 4,
-              color: '#eee',
-            }}
-            disabled={loading}
-          />
-          <input
-            type="text"
-            placeholder="Filter by source name..."
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            style={{
-              width: '100%',
-              padding: 8,
-              marginTop: 8,
-              background: '#222',
-              border: '1px solid #555',
-              borderRadius: 4,
-              color: '#eee',
-            }}
-            disabled={loading}
-          />
-        </section>
-        <section
-          style={{
-            marginBottom: 16,
-            display: 'flex',
-            gap: 8,
-            flexWrap: 'wrap',
-          }}
-        >
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              style={{
-                backgroundColor: selectedTags.includes(tag) ? '#0f0' : '#333',
-                border: '1px solid #555',
-                borderRadius: 4,
-                color: selectedTags.includes(tag) ? '#000' : '#ccc',
-                padding: '6px 12px',
-                cursor: 'pointer',
-                fontWeight: selectedTags.includes(tag) ? 'bold' : 'normal',
-              }}
-              disabled={loading}
-            >
-              {tag}
-            </button>
-          ))}
-        </section>
-        {loading && (
+        <section style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+  {allTags.map((tag) => (
+    <button
+      key={tag}
+      onClick={() => toggleTag(tag)}
+      style={{
+        backgroundColor: selectedTags.includes(tag) ? '#0f0' : '#333',
+        border: '1px solid #555',
+        borderRadius: 4,
+        color: selectedTags.includes(tag) ? '#000' : '#ccc',
+        padding: '6px 12px',
+        cursor: 'pointer',
+        fontWeight: selectedTags.includes(tag) ? 'bold' : 'normal',
+      }}
+      disabled={loading}
+    >
+      {tag}
+    </button>
+  ))}
+</section>
+
+{loading && (
   <p style={{ textAlign: 'center', marginTop: 16, fontStyle: 'italic', color: '#ccc' }}>
     Loading articles...
   </p>
 )}
-        {!loading && error && (
-          <p
-            style={{
-              textAlign: 'center',
-              marginTop: 16,
-              fontStyle: 'italic',
-              color: '#f66',
-            }}
-          >
-            {error}
-          </p>
-        )}
-        <section>
+
+{!loading && error && (
+  <p
+    style={{
+      textAlign: 'center',
+      marginTop: 16,
+      fontStyle: 'italic',
+      color: '#f66',
+    }}
+  >
+    {error}
+  </p>
+)}
+
+<section>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {visibleArticles.map((article, idx) => {
               const key = article.link || `article-${idx}`;
