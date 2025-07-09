@@ -130,19 +130,20 @@ const Home: React.FC = () => {
       return;
     }
 
-    const fetchFullArticle = async () => {
-      setLoadingFullArticle(true);
-      try {
-        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
-        if (!res.ok) throw new Error('Failed to load full article');
-        const data = await res.json();
-        setExpandedContent(data.content || 'No content available.');
-      } catch {
-        setExpandedContent('Failed to load full article.');
-      } finally {
-        setLoadingFullArticle(false);
-      }
-    };
+const fetchFullArticle = async () => {
+  setLoadingFullArticle(true);
+  try {
+    const res = await fetch(`./api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+    if (!res.ok) throw new Error('Failed to load full article');
+    const data = await res.json();
+    setExpandedContent(data.content || 'No content available.');
+  } catch (err) {
+    console.error(err); // optional: helpful for debugging
+    setExpandedContent('Failed to load full article.');
+  } finally {
+    setLoadingFullArticle(false);
+  }
+};
 
     fetchFullArticle();
   }, [expandedArticle]);
