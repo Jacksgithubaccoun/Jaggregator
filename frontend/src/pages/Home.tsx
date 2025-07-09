@@ -281,7 +281,7 @@ const Home: React.FC = () => {
                 <li key={key} style={styles.articleItem}>
                   <img
                     src={article.thumbnail || '/images/fallback.png'}
-                    alt={${article.source || 'News'} logo}
+                    alt={`${article.source || 'News'} logo`}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = '/images/fallback.png';
