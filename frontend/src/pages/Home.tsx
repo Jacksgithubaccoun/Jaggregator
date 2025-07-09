@@ -111,7 +111,7 @@ const Home: React.FC = () => {
         const articlesArrays = await Promise.all(
           savedFeeds.map(async (url) => {
             try {
-              const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
+              const res = await fetch('/api/fetch-article?url=${encodeURIComponent(url)}');
               if (!res.ok) return [];
               const data = await res.json();
               return data.articles || [];
