@@ -204,19 +204,22 @@ const Home: React.FC = () => {
   }, [expandedArticle, articles]);
 
   return (
-    <>
-      <MatrixRain />
-      <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
-        <h1 style={styles.title}>Jaggregator</h1>
+  <>
+    <MatrixRain />
 
-        <FeedsManager
-          feeds={feeds}
-          addFeed={addFeed}
-          removeFeed={removeFeed}
-          loading={loading}
-          error={error}
-          clearError={clearError}
-        />
+    {/* Black semi-transparent background layer */}
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(0, 0, 0, 0.75)', // Adjust opacity here
+      zIndex: 5,
+    }} />
+
+    {/* Main UI */}
+    <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
 
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
