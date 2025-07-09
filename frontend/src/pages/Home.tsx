@@ -397,7 +397,7 @@ const styles = {
     margin: 'auto',
     color: '#eee',
     fontFamily: "'Consolas', monospace",
-    overflowWrap: 'break-word',
+    overflowWrap: 'anywhere',
     wordBreak: 'break-word',
   },
   articleContent: {
