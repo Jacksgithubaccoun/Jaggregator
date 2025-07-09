@@ -305,7 +305,19 @@ const Home: React.FC = () => {
 
                   {/* Expanded Reader */}
                   {expandedArticle === article.link && (
-                    <div style={styles.expandedArticleContent}>
+                    <div style={{
+  marginTop: 20,
+  backgroundColor: '#111',
+  padding: 15,
+  borderRadius: 8,
+  border: '1px solid #333',
+  maxWidth: '100%',          // Limit width to container/viewport
+  overflowWrap: 'break-word', // Break long words/URLs instead of overflow
+  wordBreak: 'break-word',    // Ensure text wraps nicely
+  whiteSpace: 'normal',       // Allow normal wrapping of text
+  overflowX: 'auto',          // Scroll only if absolutely necessary horizontally
+}}
+
                       {article.audioUrl ? (
                         <audio controls style={{ width: '100%' }} key={article.audioUrl}>
                           <source src={article.audioUrl} type="audio/mpeg" />
