@@ -58,11 +58,12 @@ const Home: React.FC = () => {
     }
   };
 
-  const removeFeed = (url: string): void => {
-    setFeeds((prev) => prev.filter((f) => f !== url));
-    setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
-  };
-
+  const removeFeed = async (url: string): Promise<void> => {
+  setFeeds((prev) => prev.filter((f) => f !== url));
+  setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
+  // No actual async work here, so just return resolved promise
+  return Promise.resolve();
+};
   const clearError = () => setError('');
 
   useEffect(() => {
