@@ -220,11 +220,11 @@ const Home: React.FC = () => {
         <h1 style={styles.title}>Jaggregator</h1>
         
          <FeedsManager
-    feeds={feeds}
-    onAddFeed={addFeed}
-    onRemoveFeed={removeFeed}
-    disabled={loading}
-  />
+  feeds={feeds}
+  addFeed={addFeed}
+  removeFeed={removeFeed}
+  disabled={loading}
+/>
         <section aria-label="Search articles" style={styles.controlsContainer}>
           <input
             type="text"
