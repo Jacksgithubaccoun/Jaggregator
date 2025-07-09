@@ -52,72 +52,67 @@ function AudioPlayer({
     }
   };
 
-  return (
-    <>
-      {!showPlayer ? (
-        <button
-          onClick={handleLoad}
-          style={{
-            background: '#444',
-            color: '#ccc',
-            border: 'none',
-            padding: '6px 12px',
-            borderRadius: 4,
-            cursor: hasAudio ? 'pointer' : 'not-allowed',
-            marginTop: 8,
-            opacity: hasAudio ? 1 : 0.5,
-          }}
-          disabled={!hasAudio}
-          title={hasAudio ? undefined : 'No audio available'}
-          aria-disabled={!hasAudio}
+ return (
+  <>
+    {!showPlayer ? (
+      <button
+        onClick={handleLoad}
+        style={{
+          background: '#444',
+          color: '#ccc',
+          border: 'none',
+          padding: '6px 12px',
+          borderRadius: 4,
+          cursor: hasAudio ? 'pointer' : 'not-allowed',
+          marginTop: 8,
+          opacity: hasAudio ? 1 : 0.5,
+        }}
+        disabled={!hasAudio}
+        title={hasAudio ? undefined : 'No audio available'}
+        aria-disabled={!hasAudio}
+      >
+        ▶️ Load Audio
+      </button>
+    ) : (
+      <>
+        {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
+        {error && <div style={{ color: '#f66', marginBottom: 8 }}>{error}</div>}
+        <audio
+          ref={audioRef}
+          controls
+          preload="none"
+          style={{ width: '100%' }}
+          onCanPlay={handleCanPlay}
+          onError={handleError}
         >
-          ▶️ Load Audio
-        </button>
-      ) : (
-        <>
-          {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
-          {error && <div style={{ color: '#f66', marginBottom: 8 }}>{error}</div>}
-          <audio
-            ref={audioRef}
-            controls
-            preload="none"
-            style={{ width: '100%' }}
-            onCanPlay={handleCanPlay}
-            onError={handleError}
-          >
-            {audioUrlMp3 && <source src={proxyUrl(audioUrlMp3)!} type="audio/mpeg" />}
-            {audioUrlOgg && <source src={proxyUrl(audioUrlOgg)!} type="audio/ogg; codecs=opus" />}
-            {audioUrlWebm && <source src={proxyUrl(audioUrlWebm)!} type="audio/webm" />}
-            {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={proxyUrl(audioUrl)!} />}
-            Your browser does not support the audio element.
-          </audio>
-        </>
-      )}
-    </>
-  );
-}
+          {audioUrlMp3 && <source src={proxyUrl(audioUrlMp3)!} type="audio/mpeg" />}
+          {audioUrlOgg && <source src={proxyUrl(audioUrlOgg)!} type="audio/ogg; codecs=opus" />}
+          {audioUrlWebm && <source src={proxyUrl(audioUrlWebm)!} type="audio/webm" />}
+          {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={proxyUrl(audioUrl)!} />}
+          Your browser does not support the audio element.
+        </audio>
 
-          {/* Optional: Pause button */}
-          <button
-            onClick={handlePauseClick}
-            style={{
-              background: '#666',
-              color: '#eee',
-              border: 'none',
-              padding: '4px 8px',
-              marginTop: 6,
-              borderRadius: 4,
-              cursor: 'pointer',
-            }}
-            aria-label="Pause audio"
-          >
-            ⏸ Pause
-          </button>
-        </>
-      )}
-    </>
-  );
-}
+        {/* Optional: Pause button */}
+        <button
+          onClick={handlePauseClick}
+          style={{
+            background: '#666',
+            color: '#eee',
+            border: 'none',
+            padding: '4px 8px',
+            marginTop: 6,
+            borderRadius: 4,
+            cursor: 'pointer',
+          }}
+          aria-label="Pause audio"
+        >
+          ⏸ Pause
+        </button>
+      </>
+    )}
+  </>
+);
+
 
 const Home: React.FC = () => {
   const [feeds, setFeeds] = useState<string[]>([]);
