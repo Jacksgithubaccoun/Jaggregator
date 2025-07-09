@@ -6,6 +6,46 @@ import '../matrix-theme.css';
 
 const allTags = ['audio', 'article', 'left wing', 'right wing', 'alternative'];
 
+function AudioPlayer({
+  audioUrlMp3,
+  audioUrlOgg,
+  audioUrlWebm,
+  audioUrl,
+}: {
+  audioUrlMp3?: string | null;
+  audioUrlOgg?: string | null;
+  audioUrlWebm?: string | null;
+  audioUrl?: string | null;
+}) {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+  }, [audioUrlMp3, audioUrlOgg, audioUrlWebm, audioUrl]);
+
+  return (
+    <>
+      {loading && (
+        <div style={{ color: '#ccc', marginBottom: 8 }}>
+          Loading audio...
+        </div>
+      )}
+      <audio
+        controls
+        style={{ width: '100%' }}
+        onCanPlay={() => setLoading(false)}
+        onError={() => setLoading(false)}
+      >
+        {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
+        {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
+        {audioUrlWebm && <source src={audioUrlWebm} type="audio/webm" />}
+        {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
+        Your browser does not support the audio element.
+      </audio>
+    </>
+  );
+}
+
 const Home: React.FC = () => {
   const [feeds, setFeeds] = useState<string[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
@@ -140,7 +180,7 @@ const Home: React.FC = () => {
 
     const selected = articles.find((a) => a.link === expandedArticle);
 
-    if (selected?.audioUrl) {
+    if (selected?.audioUrl || selected?.audioUrlMp3 || selected?.audioUrlOgg || selected?.audioUrlWebm) {
       setExpandedContent('');
       setLoadingFullArticle(false);
       return;
@@ -261,119 +301,82 @@ const Home: React.FC = () => {
                       }
                       style={{
                         marginRight: 10,
-                        border: '1px solid #0f0',
-                        backgroundColor: 'transparent',
-                        color: '#0f0',
-                        borderRadius: 6,
-                        padding: '5px 10px',
-                        fontSize: 14,
+                        marginTop: 6,
                         cursor: 'pointer',
+                        background: '#444',
+                        border: 'none',
+                        color: '#eee',
+                        padding: '6px 10px',
+                        borderRadius: 4,
                       }}
+                      aria-expanded={expandedArticle === article.link}
                     >
-                      {expandedArticle === article.link ? 'Hide' : 'Read here'}
+                      {expandedArticle === article.link ? 'Collapse' : 'Expand'}
                     </button>
 
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        border: '1px solid #0070f3',
-                        color: '#0070f3',
-                        padding: '5px 10px',
-                        borderRadius: 6,
-                        textDecoration: 'none',
-                        fontSize: 14,
-                      }}
-                    >
-                      Visit source
-                    </a>
+                    {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
+                      <AudioPlayer
+                        audioUrl={article.audioUrl}
+                        audioUrlMp3={article.audioUrlMp3}
+                        audioUrlOgg={article.audioUrlOgg}
+                        audioUrlWebm={article.audioUrlWebm}
+                      />
+                    ) : null}
 
-                    {expandedArticle === article.link && (
-                      <div
+                    {expandedArticle === article.link && !loadingFullArticle && expandedContent && !(
+                      article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm
+                    ) && (
+                      <article
                         style={{
-                          marginTop: 20,
+                          marginTop: 10,
+                          maxHeight: 300,
+                          overflowY: 'auto',
                           backgroundColor: '#111',
-                          padding: 15,
-                          borderRadius: 8,
-                          border: '1px solid #333',
-                          maxWidth: '100%',
-                          overflowX: 'auto',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
+                          padding: 10,
+                          borderRadius: 4,
+                          color: '#ccc',
                         }}
-                      >
-                        {article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm ? (
-                          <audio controls style={{ width: '100%' }}>
-                            {article.audioUrlMp3 && (
-                              <source src={article.audioUrlMp3} type="audio/mpeg" />
-                            )}
-                            {article.audioUrlOgg && (
-                              <source src={article.audioUrlOgg} type="audio/ogg; codecs=opus" />
-                            )}
-                            {article.audioUrlWebm && (
-                              <source src={article.audioUrlWebm} type="audio/webm" />
-                            )}
-                            {article.audioUrl && !article.audioUrl.match(/\.(mp3|ogg|webm)$/i) && (
-                              <source src={article.audioUrl} />
-                            )}
-                            Your browser does not support the audio element.
-                          </audio>
-                        ) : loadingFullArticle ? (
-                          <p>Loading full article...</p>
-                        ) : (
-                          <div dangerouslySetInnerHTML={{ __html: expandedContent }} />
-                        )}
-                      </div>
+                        dangerouslySetInnerHTML={{ __html: expandedContent }}
+                      />
                     )}
 
-                    <div style={styles.articleTags}>
-                      {article.tags?.map((tag: string) => (
-                        <span key={tag} style={styles.articleTag}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    {loadingFullArticle && expandedArticle === article.link && (
+                      <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
+                    )}
                   </div>
                 </li>
               );
             })}
           </ul>
-
-          {visibleCount < filteredArticles.length && (
+          {visibleCount < filteredArticlesSorted.length && (
             <button
-              onClick={() => setVisibleCount((c) => c + 10)}
-              style={{
-                marginTop: 20,
-                padding: '10px 20px',
-                fontSize: 16,
-                cursor: 'pointer',
-                borderRadius: 8,
-                border: '1px solid #0f0',
-                backgroundColor: 'transparent',
-                color: '#0f0',
-              }}
-              aria-label="Show more articles"
+              onClick={() => setVisibleCount((v) => v + 10)}
+              style={styles.loadMoreButton}
+              disabled={loading}
             >
-              Show more
+              Load More
             </button>
           )}
         </section>
 
         {showSecret && (
           <section
-            aria-label="Secret Content"
             style={{
-              marginTop: 40,
-              padding: 20,
-              backgroundColor: '#222',
-              borderRadius: 10,
-              border: '2px solid #0f0',
+              position: 'fixed',
+              bottom: 10,
+              right: 10,
+              backgroundColor: 'rgba(0,0,0,0.8)',
               color: '#0f0',
+              padding: 10,
+              borderRadius: 6,
+              zIndex: 9999,
+              maxWidth: 320,
+              fontSize: 12,
+              fontFamily: 'monospace',
             }}
+            aria-live="polite"
           >
-            <h2>Secret Content Unlocked!</h2>
-            <p>You found the secret phrase! Here's your hidden content.</p>
+            <strong>Secret activated:</strong> The Powers That Be
           </section>
         )}
       </main>
@@ -381,121 +384,97 @@ const Home: React.FC = () => {
   );
 };
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   container: {
-    maxWidth: '1000px',
-    width: '100%',
-    margin: 'auto',
-    color: '#eee',
-    fontFamily: "'Consolas', monospace",
-    overflowWrap: 'anywhere' as const,
-    wordBreak: 'break-word' as const,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    borderRadius: 12,
-    padding: 30,
-    position: 'relative' as const,
-    zIndex: 1,
+    maxWidth: 900,
+    margin: '20px auto',
+    padding: 16,
+    color: '#ccc',
   },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold' as const,
+    fontSize: 32,
     marginBottom: 16,
-    textAlign: 'center' as const,
+    textAlign: 'center',
   },
   controlsContainer: {
-    marginBottom: 20,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center' as const,
+    marginBottom: 16,
   },
   input: {
     width: '100%',
-    maxWidth: 400,
-    padding: 10,
-    fontSize: 18,
-    borderRadius: 8,
+    padding: 8,
+    background: '#222',
     border: '1px solid #555',
-    backgroundColor: '#222',
+    borderRadius: 4,
     color: '#eee',
   },
   tagsContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
     display: 'flex',
-    justifyContent: 'center',
-    gap: 12,
-    flexWrap: 'wrap' as const,
+    gap: 8,
+    flexWrap: 'wrap',
   },
   tagButton: {
-    padding: '6px 12px',
-    borderRadius: 8,
     backgroundColor: '#333',
+    border: '1px solid #555',
+    borderRadius: 4,
     color: '#ccc',
-    border: 'none',
+    padding: '6px 12px',
     cursor: 'pointer',
-    fontSize: 14,
   },
   tagButtonActive: {
     backgroundColor: '#0f0',
     color: '#000',
+    fontWeight: 'bold',
   },
   statusText: {
-    fontSize: 18,
-    textAlign: 'center' as const,
-    marginTop: 20,
+    textAlign: 'center',
+    marginTop: 16,
+    fontStyle: 'italic',
   },
   articlesSection: {
-    marginTop: 30,
+    marginTop: 16,
   },
   articleList: {
-    listStyle: 'none' as const,
+    listStyle: 'none',
     padding: 0,
-    margin: 0,
   },
   articleItem: {
-    marginBottom: 30,
-    paddingBottom: 20,
-    borderBottom: '1px solid #444',
     display: 'flex',
-    gap: 20,
+    gap: 12,
+    padding: 12,
+    borderBottom: '1px solid #444',
   },
   thumbnail: {
-    width: 120,
-    height: 90,
-    objectFit: 'cover' as const,
-    borderRadius: 8,
-    flexShrink: 0,
+    width: 80,
+    height: 80,
+    objectFit: 'cover',
+    borderRadius: 4,
   },
   articleContent: {
-    whiteSpace: 'pre-wrap' as const,
-    wordBreak: 'break-word' as const,
-    overflowX: 'auto' as const,
     flex: 1,
   },
   articleTitle: {
-    fontSize: 20,
-    fontWeight: 'bold' as const,
     color: '#0f0',
+    fontWeight: 'bold',
     textDecoration: 'none',
   },
   articleDescription: {
+    marginTop: 4,
     fontSize: 14,
-    color: '#bbb',
-    margin: '8px 0',
+    color: '#ccc',
   },
   articleMeta: {
     fontSize: 12,
-    color: '#555',
+    color: '#888',
   },
-  articleTags: {
-    marginTop: 10,
-  },
-  articleTag: {
-    fontSize: 12,
-    backgroundColor: '#333',
-    padding: '2px 6px',
+  loadMoreButton: {
+    marginTop: 12,
+    padding: '8px 16px',
     borderRadius: 4,
-    marginRight: 6,
-    color: '#aaa',
+    border: 'none',
+    backgroundColor: '#0f0',
+    color: '#000',
+    cursor: 'pointer',
   },
 };
 
