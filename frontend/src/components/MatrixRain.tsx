@@ -17,8 +17,25 @@ const MatrixRain: React.FC = () => {
     canvas.width = width;
     canvas.height = height;
 
-    const letters = 'abcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()*&^%'.split('');
-    const fontSize = 14;
+    // Extended character set:
+    // Latin letters, numbers, symbols + Hiragana, Katakana, some Kanji, and some misc symbols (as "wingdings-like")
+    const letters = [
+      ...'abcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:,.<>?'.split(''),
+
+      // Hiragana (Unicode range 3040–309F)
+      ...Array.from({ length: 96 }, (_, i) => String.fromCharCode(0x3040 + i)),
+
+      // Katakana (Unicode range 30A0–30FF)
+      ...Array.from({ length: 96 }, (_, i) => String.fromCharCode(0x30A0 + i)),
+
+      // Some common Kanji (just picking a few from 4E00–9FBF)
+      '日','本','語','水','火','金','土','木','人','大','中','小','山','川','田','天',
+
+      // Misc symbols resembling "wingdings" / dingbats (some Unicode blocks)
+      ...['✈', '✉', '☎', '☢', '☣', '☯', '☮', '♠', '♣', '♥', '♦', '♛', '☘', '⚡', '☀', '☁', '☂', '☃', '⚓', '⚔']
+    ];
+
+    const fontSize = 16;
     const columns = Math.floor(width / fontSize);
 
     const drops = new Array(columns).fill(1);
@@ -27,6 +44,8 @@ const MatrixRain: React.FC = () => {
 
     const draw = () => {
       if (!ctx) return;
+
+      // Semi-transparent background for trailing effect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, width, height);
 
@@ -54,6 +73,12 @@ const MatrixRain: React.FC = () => {
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
+      // reset columns and drops
+      const newColumns = Math.floor(width / fontSize);
+      drops.length = newColumns;
+      for(let i = 0; i < newColumns; i++) {
+        if (!drops[i]) drops[i] = 1;
+      }
     };
 
     window.addEventListener('resize', handleResize);
