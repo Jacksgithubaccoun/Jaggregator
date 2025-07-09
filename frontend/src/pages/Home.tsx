@@ -17,13 +17,18 @@ function AudioPlayer({
   audioUrlWebm?: string | null;
   audioUrl?: string | null;
 }) {
-  const [showPlayer, setShowPlayer] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showPlayer, setShowPlayer] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement>(null);
 
   const hasAudio =
     !!audioUrlMp3 || !!audioUrlOgg || !!audioUrlWebm || !!audioUrl;
+
+  const proxyUrl = (originalUrl?: string | null) =>
+    originalUrl
+      ? `/api/proxy-audio?url=${encodeURIComponent(originalUrl)}`
+      : null;
 
   const handleLoad = () => {
     if (!hasAudio) return;
@@ -80,12 +85,18 @@ function AudioPlayer({
             onCanPlay={handleCanPlay}
             onError={handleError}
           >
-            {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
-            {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
-            {audioUrlWebm && <source src={audioUrlWebm} type="audio/webm" />}
-            {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
+            {audioUrlMp3 && <source src={proxyUrl(audioUrlMp3)!} type="audio/mpeg" />}
+            {audioUrlOgg && <source src={proxyUrl(audioUrlOgg)!} type="audio/ogg; codecs=opus" />}
+            {audioUrlWebm && <source src={proxyUrl(audioUrlWebm)!} type="audio/webm" />}
+            {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={proxyUrl(audioUrl)!} />}
             Your browser does not support the audio element.
           </audio>
+        </>
+      )}
+    </>
+  );
+}
+
           {/* Optional: Pause button */}
           <button
             onClick={handlePauseClick}
