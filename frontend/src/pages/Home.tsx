@@ -17,27 +17,49 @@ function AudioPlayer({
   audioUrlWebm?: string | null;
   audioUrl?: string | null;
 }) {
-  const [loading, setLoading] = useState(true);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const handleLoad = () => {
+    setShowPlayer(true);
     setLoading(true);
-  }, [audioUrlMp3, audioUrlOgg, audioUrlWebm, audioUrl]);
+  };
 
   return (
     <>
-      {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
-      <audio
-        controls
-        style={{ width: '100%' }}
-        onCanPlay={() => setLoading(false)}
-        onError={() => setLoading(false)}
-      >
-        {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
-        {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
-        {audioUrlWebm && <source src={audioUrlWebm} type="audio/webm" />}
-        {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
-        Your browser does not support the audio element.
-      </audio>
+      {!showPlayer ? (
+        <button
+          onClick={handleLoad}
+          style={{
+            background: '#444',
+            color: '#ccc',
+            border: 'none',
+            padding: '6px 12px',
+            borderRadius: 4,
+            cursor: 'pointer',
+            marginTop: 8,
+          }}
+        >
+          ▶️ Load Audio
+        </button>
+      ) : (
+        <>
+          {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
+          <audio
+            controls
+            preload="none"
+            style={{ width: '100%' }}
+            onCanPlay={() => setLoading(false)}
+            onError={() => setLoading(false)}
+          >
+            {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
+            {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
+            {audioUrlWebm && <source src={audioUrlWebm} type="audio/webm" />}
+            {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
+            Your browser does not support the audio element.
+          </audio>
+        </>
+      )}
     </>
   );
 }
