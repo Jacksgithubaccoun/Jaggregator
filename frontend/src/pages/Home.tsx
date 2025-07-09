@@ -97,7 +97,6 @@ const uniqueArticles = allArticles.filter(
 );
 
 setArticles(uniqueArticles);
-        setArticles(articlesArrays.flat());
       } catch {
         setError('Failed to fetch articles from saved feeds.');
       }
@@ -378,7 +377,7 @@ setArticles(uniqueArticles);
     ) : loadingFullArticle ? (
       <p>Loading full article...</p>
     ) : (
-      <div dangerouslySetInnerHTML={{ __html: expandedContent }} />
+      <div dangerouslySetInnerHTML={{ __html: expandedContent }}</div>
     )}
   </div>
 )}
