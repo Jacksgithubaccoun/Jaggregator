@@ -279,22 +279,6 @@ const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 >
   Visit source
 </a>
-
-        <a
-          href={article.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            border: '1px solid #0070f3',
-            color: '#0070f3',
-            padding: '5px 10px',
-            borderRadius: 6,
-            textDecoration: 'none',
-            fontSize: 14,
-          }}
-        >
-          Visit source
-        </a>
       </div>
 
       {/* Expanded Reader */}
