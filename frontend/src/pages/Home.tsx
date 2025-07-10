@@ -167,7 +167,7 @@ const Home: React.FC = () => {
   });
 }
       { rootMargin: '100px' }
-    );
+  
 
     observer.observe(loadMoreRef.current);
 
