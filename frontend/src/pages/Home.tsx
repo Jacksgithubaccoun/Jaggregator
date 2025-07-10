@@ -517,12 +517,7 @@ return (
                 <li key={article.link} style={styles.articleItem}>
                   {article.thumbnail && <img src={article.thumbnail} alt="" style={styles.thumbnail} />}
                   <div style={styles.articleContent}>
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.articleTitle}
-                    >
+                    <a href={article.link} target="_blank" rel="noopener noreferrer" style={styles.articleTitle}>
                       {article.title}
                     </a>
                     <p style={styles.articleDescription}>{article.description}</p>
@@ -540,21 +535,24 @@ return (
                     ) : (
                       <>
                         <button
-                         onClick={() => {
-  if (expandedArticle === article.link) {
-    setExpandedArticle(null);
-  } else {
-    setExpandedArticle(article.link);
-  }
-}}
+                          onClick={() => {
+                            if (expandedContent === article.link) {
+                              setExpandedContent('');
+                            } else {
+                              loadFullArticle(article.link); // your function to load full article
+                              setExpandedContent(article.link);
+                            }
+                          }}
                         >
-                          {expandedArticle === article.link && (
-  <div style={styles.fullArticleContent}>
-    {loadingFullArticle
-      ? 'Loading full article...'
-      : fullArticleCache.current[article.link]}
-  </div>
-)}
+                          {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
+                        </button>
+                        {expandedContent === article.link && (
+                          <div style={styles.fullArticleContent}>
+                            {loadingFullArticle
+                              ? 'Loading full article...'
+                              : fullArticleCache.current[article.link]}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -568,6 +566,5 @@ return (
     </main>
   </>
 );
-
 };
-  export default Home;
+export default Home;
