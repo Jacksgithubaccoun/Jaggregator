@@ -196,7 +196,7 @@ const Home: React.FC = () => {
         const articlesArrays = await Promise.all(
           savedFeeds.map(async (url) => {
             try {
-              const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
+              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
               if (!res.ok) return [];
               const data = await res.json();
               return data.articles || [];
@@ -235,7 +235,7 @@ const Home: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
+      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
       if (!res.ok) throw new Error('Failed to fetch feed articles');
       const data = await res.json();
 
@@ -288,7 +288,7 @@ const Home: React.FC = () => {
     const fetchFullArticle = async () => {
       setLoadingFullArticle(true);
       try {
-        const res = await fetch(/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)});
+        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
         if (!res.ok) throw new Error('Failed to load full article');
         const data = await res.json();
         setExpandedContent(data.content || 'No content available.');
