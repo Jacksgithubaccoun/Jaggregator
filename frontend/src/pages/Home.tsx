@@ -397,11 +397,11 @@ const Home: React.FC = () => {
 
                     {expandedArticle === article.link && (article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
   <AudioPlayer
-  audioUrlMp3={article.audioUrlMp3 ? `/api/proxy-audio?url=${encodeURIComponent(article.audioUrlMp3)}` : undefined}
-  audioUrlOgg={article.audioUrlOgg ? `/api/proxy-audio?url=${encodeURIComponent(article.audioUrlOgg)}` : undefined}
-  audioUrlWebm={article.audioUrlWebm ? `/api/proxy-audio?url=${encodeURIComponent(article.audioUrlWebm)}` : undefined}
-  audioUrl={article.audioUrl ? `/api/proxy-audio?url=${encodeURIComponent(article.audioUrl)}` : undefined}
-  />
+   audioUrlMp3={article.audioUrlMp3}
+  audioUrlOgg={article.audioUrlOgg}
+  audioUrlWebm={article.audioUrlWebm}
+  audioUrl={article.audioUrl}
+/>
 )}
 
                     {expandedArticle === article.link &&
