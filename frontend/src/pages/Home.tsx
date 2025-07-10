@@ -539,5 +539,5 @@ const styles: Record<string, React.CSSProperties> = {
     </main>
   </>
 );
-}:
+};
   export default Home;
