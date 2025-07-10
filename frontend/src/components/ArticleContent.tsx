@@ -12,11 +12,14 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
   images = [],
 }) => {
   return (
-    <article className="prose lg:prose-xl max-w-none">
+    <article className="prose lg:prose-xl w-full max-w-full overflow-x-auto break-words">
       <h1 className="text-2xl font-bold mb-4">{title}</h1>
 
       {/* Render HTML content safely */}
-      <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+      <div
+        className="article-body"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
 
       {/* Render images if any */}
       {images.length > 0 && (
@@ -26,7 +29,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
               key={i}
               src={src}
               alt={`Article image ${i + 1}`}
-              style={{ maxWidth: '100%', borderRadius: '8px' }}
+              className="max-w-full rounded-lg object-contain"
               loading="lazy"
             />
           ))}
