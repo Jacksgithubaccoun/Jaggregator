@@ -539,8 +539,7 @@ return (
                             if (expandedContent === article.link) {
                               setExpandedContent('');
                             } else {
-                              loadFullArticle(article.link); // your function to load full article
-                              setExpandedContent(article.link);
+                              setExpandedArticle(article.link);
                             }
                           }}
                         >
