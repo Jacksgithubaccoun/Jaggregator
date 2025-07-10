@@ -178,15 +178,18 @@ const Home: React.FC = () => {
     if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
   };
 }, [filteredAndSortedArticles.length, visibleCount]);
-
-  useEffect(() => {
+useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
+    // Example: handle secret key combos here
+    // e.g. if (e.key === 'S') { ... }
+  };
+
   window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
+
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
 }, [setShowSecret, setTypedKeys]);
-        return next;
-      });
-    };
 
 
 useEffect(() => {
