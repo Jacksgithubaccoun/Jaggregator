@@ -411,6 +411,7 @@ const Home: React.FC = () => {
                         <article
                           style={{
                             marginTop: 10,
+                            maxwidth: 700,
                             maxHeight: 300,
                             overflowY: 'auto',
                             backgroundColor: '#111',
@@ -418,6 +419,7 @@ const Home: React.FC = () => {
                             borderRadius: 4,
                             color: '#ccc',
                           }}
+                          
                           dangerouslySetInnerHTML={{ __html: expandedContent }}
                         />
                       )}
