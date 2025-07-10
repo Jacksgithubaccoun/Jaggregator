@@ -548,16 +548,18 @@ return (
   </button>
 
   {expandedArticle === article.link && (
-    loadingFullArticle ? (
-      <div style={styles.fullArticleContent}>Loading full article...</div>
-    ) : (
-      <ArticleContent 
-  title={data.title} 
-  text={data.text} 
-  images={data.images} 
-/>
-    )
-  )}
+  loadingFullArticle ? (
+    <div style={styles.fullArticleContent}>Loading full article...</div>
+  ) : data ? (
+    <ArticleContent 
+      title={data.title} 
+      text={data.text} 
+      images={data.images || []} 
+    />
+  ) : (
+    <div style={styles.fullArticleContent}>Failed to load article.</div>
+  )
+)}
 </>
                     )}
                   </div>
