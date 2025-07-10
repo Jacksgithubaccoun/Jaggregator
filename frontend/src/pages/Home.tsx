@@ -180,19 +180,14 @@ const Home: React.FC = () => {
 }, [filteredAndSortedArticles.length, visibleCount]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      setTypedKeys((prev) => {
-        const next = (prev + e.key.toLowerCase()).replace(/[^a-z]/g, '').slice(-30);
-        if (next.includes('thepowersthatbe')) {
-          setShowSecret(true);
-        }
+  const handleKeyDown = ...
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [setShowSecret, setTypedKeys]);
         return next;
       });
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
 useEffect(() => {
   const loadFeeds = async () => {
@@ -533,9 +528,9 @@ const styles: Record<string, React.CSSProperties> = {
             ))}
           </ul>
     <div ref={loadMoreRef} style={{ height: 1 }} aria-hidden="true" />
-        )}
-      </section>
-    </main>
+         </>
+  )}
+</section>
   </>
 );
 };
