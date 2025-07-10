@@ -156,25 +156,28 @@ const Home: React.FC = () => {
   const visibleArticles = filteredAndSortedArticles.slice(0, visibleCount);
 
   
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-       if (entries[0].isIntersecting && visibleCount < filteredAndSortedArticles.length) {
-  setVisibleCount((prev) => {
-    const nextCount = prev + 10;
-    return nextCount > filteredAndSortedArticles.length ? filteredAndSortedArticles.length : nextCount;
-  });
-}
-      { rootMargin: '100px' }
-  
+ useEffect(() => {
+  if (!loadMoreRef.current) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && visibleCount < filteredAndSortedArticles.length) {
+        setVisibleCount((prev) => {
+          const nextCount = prev + 10;
+          return nextCount > filteredAndSortedArticles.length
+            ? filteredAndSortedArticles.length
+            : nextCount;
+        });
+      }
+    },
+    { rootMargin: '100px' } // <-- This was misplaced before
+  );
 
-    observer.observe(loadMoreRef.current);
+  observer.observe(loadMoreRef.current);
 
-    return () => {
-      if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
-    };
-  }, [filteredAndSortedArticles.length, visibleCount]);
+  return () => {
+    if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
+  };
+}, [filteredAndSortedArticles.length, visibleCount]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
