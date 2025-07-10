@@ -303,89 +303,91 @@ const Home: React.FC = () => {
   }, [expandedArticle, articles]);
 
   return (
-    <>
-      <MatrixRain />
+  <>
+    <MatrixRain />
 
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 5,
-        }}
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        zIndex: 5,
+      }}
+    />
+
+    <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
+      <h1 style={styles.title}>Jaggregator</h1>
+
+      <FeedsManager
+        feeds={feeds}
+        addFeed={addFeed}
+        removeFeed={removeFeed}
+        loading={loading}
+        error={error}
+        clearError={clearError}
       />
 
-      <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
-        <h1 style={styles.title}>Jaggregator</h1>
-
-        <FeedsManager
-          feeds={feeds}
-          addFeed={addFeed}
-          removeFeed={removeFeed}
-          loading={loading}
-          error={error}
-          clearError={clearError}
+      <section aria-label="Search articles" style={styles.controlsContainer}>
+        <input
+          type="text"
+          placeholder="Search articles..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={styles.input}
+          disabled={loading}
         />
-
-        <section aria-label="Search articles" style={styles.controlsContainer}>
-
-          
-
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.input}
-            disabled={loading}
-          />
-          <input
-            type="text"
-            placeholder="Filter by source name..."
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            style={{ ...styles.input, marginTop: 8 }}
-            disabled={loading}
-          />
-          
-        </section>
-        
-<section style={styles.articlesSection}>
-  {visibleArticles.length === 0 ? (
-    <p style={styles.statusText}>No articles found.</p>
-  ) : (
-    <ul style={styles.articleList}>
-      {visibleArticles.map((article) => (
-        <li key={article.link} style={styles.articleItem}>
-          {article.thumbnail && (
-            <img src={article.thumbnail} alt="" style={styles.thumbnail} />
-          )}
-          <div style={styles.articleContent}>
-            <a href={article.link} target="_blank" rel="noopener noreferrer" style={styles.articleTitle}>
-              {article.title}
-            </a>
-            <p style={styles.articleDescription}>{article.description}</p>
-            <div style={styles.articleMeta}>
-              {article.source} · {article.pubDate}
-            </div>
-
-            <AudioPlayer
-              audioUrlMp3={article.audioUrlMp3 ?? null}
-              audioUrlOgg={article.audioUrlOgg ?? null}
-              audioUrlWebm={article.audioUrlWebm ?? null}
-              audioUrl={article.audioUrl ?? null}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
-        
+        <input
+          type="text"
+          placeholder="Filter by source name..."
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          style={{ ...styles.input, marginTop: 8 }}
+          disabled={loading}
+        />
       </section>
+
+      <section style={styles.articlesSection}>
+        {visibleArticles.length === 0 ? (
+          <p style={styles.statusText}>No articles found.</p>
+        ) : (
+          <ul style={styles.articleList}>
+            {visibleArticles.map((article) => (
+              <li key={article.link} style={styles.articleItem}>
+                {article.thumbnail && (
+                  <img src={article.thumbnail} alt="" style={styles.thumbnail} />
+                )}
+                <div style={styles.articleContent}>
+                  <a
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.articleTitle}
+                  >
+                    {article.title}
+                  </a>
+                  <p style={styles.articleDescription}>{article.description}</p>
+                  <div style={styles.articleMeta}>
+                    {article.source} · {article.pubDate}
+                  </div>
+
+                  <AudioPlayer
+                    audioUrlMp3={article.audioUrlMp3 ?? null}
+                    audioUrlOgg={article.audioUrlOgg ?? null}
+                    audioUrlWebm={article.audioUrlWebm ?? null}
+                    audioUrl={article.audioUrl ?? null}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
+  </>
+);
 
 
 const styles: Record<string, React.CSSProperties> = {
