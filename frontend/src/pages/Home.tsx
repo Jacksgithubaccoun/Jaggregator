@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import FeedsManager from '../components/FeedsManager';
 import MatrixRain from '../components/MatrixRain';
 import '../matrix-theme.css';
+import { ArticleContent } from '@/components/ArticleContent';
 
 const allTags = ['audio', 'article', 'left wing', 'right wing', 'alternative'];
 
@@ -543,14 +544,15 @@ return (
     }
   }}
 >
-  {expandedArticle === article.link ? 'Collapse' : 'Expand Article'}
-</button>
-{expandedArticle === article.link && (
-  <div style={styles.fullArticleContent}>
-    {loadingFullArticle
-      ? 'Loading full article...'
-      : fullArticleCache.current[article.link] || expandedContent}
-  </div>
+ {expandedArticle === article.link && (
+  loadingFullArticle ? (
+    <div style={styles.fullArticleContent}>Loading full article...</div>
+  ) : (
+    <ArticleContent
+      title={article.title}
+      text={fullArticleCache.current[article.link] || expandedContent}
+    />
+  )
 )}
                       </>
                     )}
