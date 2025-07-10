@@ -212,7 +212,10 @@ useEffect(() => {
             );
             if (!res.ok) return [];
             const data = await res.json();
-
+            completed++;
+          setLoadingProgress((completed / total) * 100); // update progress here
+          return data.articles;
+        } catch {
             completed++;
             setLoadingProgress((completed / total) * 100);
 
@@ -451,14 +454,14 @@ const styles: Record<string, React.CSSProperties> = {
         clearError={clearError}
       />
       
-  {loading && (
+{loading && (
+  <div style={{ width: '100%', background: '#eee', height: '6px', marginBottom: '1rem' }}>
     <div
       style={{
-        height: 6,
-        backgroundColor: '#222',
-        borderRadius: 3,
-        marginBottom: 12,
-        overflow: 'hidden',
+        width: `${loadingProgress}%`,
+        background: '#4caf50',
+        height: '100%',
+        transition: 'width 0.3s ease-in-out',
       }}
       aria-label="Loading progress"
       role="progressbar"
@@ -502,35 +505,50 @@ const styles: Record<string, React.CSSProperties> = {
         ) : (
           <>
             <ul style={styles.articleList}>
-              {visibleArticles.map((article) => (
-                <li key={article.link} style={styles.articleItem}>
-                  {article.thumbnail && (
-                    <img src={article.thumbnail} alt="" style={styles.thumbnail} />
-                  )}
-                  <div style={styles.articleContent}>
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.articleTitle}
-                    >
-                      {article.title}
-                    </a>
-                    <p style={styles.articleDescription}>{article.description}</p>
-                    <div style={styles.articleMeta}>
-                      {article.source} · {article.pubDate}
-                    </div>
+{visibleArticles.map((article) => (
+  <li key={article.link} style={styles.articleItem}>
+    {article.thumbnail && <img src={article.thumbnail} alt="" style={styles.thumbnail} />}
+    <div style={styles.articleContent}>
+      <a href={article.link} target="_blank" rel="noopener noreferrer" style={styles.articleTitle}>
+        {article.title}
+      </a>
+      <p style={styles.articleDescription}>{article.description}</p>
+      <div style={styles.articleMeta}>
+        {article.source} · {article.pubDate}
+      </div>
 
-                    <AudioPlayer
-                      audioUrlMp3={article.audioUrlMp3 ?? null}
-                      audioUrlOgg={article.audioUrlOgg ?? null}
-                      audioUrlWebm={article.audioUrlWebm ?? null}
-                      audioUrl={article.audioUrl ?? null}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+      {article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm || article.audioUrl ? (
+        <AudioPlayer
+          audioUrlMp3={article.audioUrlMp3 ?? null}
+          audioUrlOgg={article.audioUrlOgg ?? null}
+          audioUrlWebm={article.audioUrlWebm ?? null}
+          audioUrl={article.audioUrl ?? null}
+        />
+      ) : (
+        <>
+          <button
+            onClick={() => {
+              if (expandedContent === article.link) {
+                setExpandedContent('');
+              } else {
+                setExpandedContent(article.link);
+                loadFullArticle(article.link); // function to load full content if you have one
+              }
+            }}
+          >
+            {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
+          </button>
+          {expandedContent === article.link && (
+            <div style={styles.fullArticleContent}>
+              {loadingFullArticle ? 'Loading full article...' : /* render full article here */}
+              {fullArticleCache.current[article.link]}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  </li>
+))
 
             <div ref={loadMoreRef} style={{ height: 1 }} aria-hidden="true" />
           </>
