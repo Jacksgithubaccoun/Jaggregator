@@ -3,14 +3,7 @@ import { JSDOM } from 'jsdom';
 import { Readability } from '@mozilla/readability';
 import Parser from 'rss-parser';
 
-const parser = new Parser({
-  customFields: {
-    item: [
-      ['itunes:transcript', 'transcript'], // pull transcript from itunes:transcript if available
-      ['itunes:summary', 'itunesSummary'], // optional fallback summary
-    ],
-  },
-});
+const parser = new Parser();
 
 function isValidHttpUrl(urlString: string) {
   try {
@@ -30,35 +23,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const cacheBustedUrl = `${url}${url.includes('?') ? '&' : '?'}cacheBust=${Date.now()}`;
-const feed = await parser.parseURL(cacheBustedUrl);
+    const feed = await parser.parseURL(cacheBustedUrl);
 
     const articles = await Promise.all(
       feed.items.map(async (item) => {
-        // Detect audio URLs from enclosure
+        // Detect audio enclosure URLs by common audio MIME types
         const audioUrlMp3 = item.enclosure?.type === 'audio/mpeg' ? item.enclosure.url : null;
         const audioUrlOgg = item.enclosure?.type === 'audio/ogg' ? item.enclosure.url : null;
         const audioUrlWebm = item.enclosure?.type === 'audio/webm' ? item.enclosure.url : null;
         const audioUrl = audioUrlMp3 || audioUrlOgg || audioUrlWebm;
 
-        // Extract transcript from itunes:transcript field or fallback to itunesSummary or empty
-        const transcript = item.transcript || item.itunesSummary || '';
-
         if (audioUrl) {
+          // Audio-only item, no content HTML
           return {
             title: item.title || 'No title',
-            content: '', // avoid loading audio in content to keep it lazy
-            audioUrl: `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`, // proxy instead of direct load
-            transcript,
+            content: '',
+            audioUrl: `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`,
+            transcript: '', // no transcript from iTunes, so empty
             link: item.link || '',
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.itunes?.image || feed.image?.url || '',
+            thumbnail: item.enclosure?.url || feed.image?.url || '',
             description: item.contentSnippet || item.summary || '',
             tags: ['audio'],
           };
         }
 
-        // Validate article link
+        // For article items, validate the link
         if (!item.link || !isValidHttpUrl(item.link)) {
           console.warn('Skipping invalid article link:', item.link);
           return {
@@ -69,12 +60,13 @@ const feed = await parser.parseURL(cacheBustedUrl);
             link: item.link || '',
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.enclosure?.url || item.itunes?.image || '',
+            thumbnail: '',
             description: item.contentSnippet || '',
             tags: ['article'],
           };
         }
 
+        // Fetch and parse the article HTML for content
         try {
           const response = await fetch(item.link);
           if (!response.ok) throw new Error(`Failed to fetch: ${item.link}`);
@@ -84,15 +76,22 @@ const feed = await parser.parseURL(cacheBustedUrl);
           const reader = new Readability(dom.window.document);
           const article = reader.parse();
 
+          // Extract first image from article content for thumbnail if available
+          const images = article?.content
+            ? Array.from(new JSDOM(article.content).window.document.querySelectorAll('img'))
+                .map((img) => img.src)
+                .filter((src) => src.startsWith('http'))
+            : [];
+
           return {
             title: article?.title || item.title || 'No title',
             content: article?.content || '<p>No content available</p>',
             audioUrl: null,
-            transcript: '', // no transcript for regular articles
+            transcript: '',
             link: item.link,
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.enclosure?.url || item.itunes?.image || '',
+            thumbnail: images[0] || '',
             description: item.contentSnippet || item.summary || '',
             tags: ['article'],
           };
@@ -106,7 +105,7 @@ const feed = await parser.parseURL(cacheBustedUrl);
             link: item.link,
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.enclosure?.url || '',
+            thumbnail: '',
             description: item.contentSnippet || '',
             tags: ['article'],
           };
@@ -116,31 +115,15 @@ const feed = await parser.parseURL(cacheBustedUrl);
 
     const filteredArticles = articles.filter(Boolean);
     filteredArticles.sort((a, b) => {
-  const dateA = new Date(a.pubDate || 0).getTime();
-  const dateB = new Date(b.pubDate || 0).getTime();
-  return dateB - dateA; // newest first
-});
+      const dateA = new Date(a.pubDate || 0).getTime();
+      const dateB = new Date(b.pubDate || 0).getTime();
+      return dateB - dateA; // newest first
+    });
 
-res.setHeader('Cache-Control', 'no-store'); // optional, disables caching
+    res.setHeader('Cache-Control', 'no-store');
     res.status(200).json({ articles: filteredArticles });
   } catch (error) {
     console.error('Failed to fetch or parse RSS feed:', error);
     res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
-  }
-}
-    // Extract image URLs from the article content
-    const contentDom = new JSDOM(article.content);
-    const images = Array.from(contentDom.window.document.querySelectorAll('img'))
-      .map((img) => img.src)
-      .filter((src) => src && src.startsWith('http'));
-
-    res.status(200).json({
-      title: article.title,
-      content: article.content, // HTML string
-      images, // array of image URLs
-    });
-  } catch (error) {
-    console.error('Error fetching/parsing article:', error);
-    res.status(500).json({ error: 'Error fetching or parsing article' });
   }
 }
