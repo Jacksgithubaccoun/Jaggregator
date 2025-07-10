@@ -496,45 +496,47 @@ const styles: Record<string, React.CSSProperties> = {
         />
       </section>
 
-      <section style={styles.articlesSection}>
+     <section style={styles.articlesSection}>
         {visibleArticles.length === 0 ? (
           <p style={styles.statusText}>No articles found.</p>
         ) : (
-          <ul style={styles.articleList}>
-            {visibleArticles.map((article) => (
-              <li key={article.link} style={styles.articleItem}>
-                {article.thumbnail && (
-                  <img src={article.thumbnail} alt="" style={styles.thumbnail} />
-                )}
-                <div style={styles.articleContent}>
-                  <a
-                    href={article.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.articleTitle}
-                  >
-                    {article.title}
-                  </a>
-                  <p style={styles.articleDescription}>{article.description}</p>
-                  <div style={styles.articleMeta}>
-                    {article.source} · {article.pubDate}
-                  </div>
+          <>
+            <ul style={styles.articleList}>
+              {visibleArticles.map((article) => (
+                <li key={article.link} style={styles.articleItem}>
+                  {article.thumbnail && (
+                    <img src={article.thumbnail} alt="" style={styles.thumbnail} />
+                  )}
+                  <div style={styles.articleContent}>
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.articleTitle}
+                    >
+                      {article.title}
+                    </a>
+                    <p style={styles.articleDescription}>{article.description}</p>
+                    <div style={styles.articleMeta}>
+                      {article.source} · {article.pubDate}
+                    </div>
 
-                  <AudioPlayer
-                    audioUrlMp3={article.audioUrlMp3 ?? null}
-                    audioUrlOgg={article.audioUrlOgg ?? null}
-                    audioUrlWebm={article.audioUrlWebm ?? null}
-                    audioUrl={article.audioUrl ?? null}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-    <div ref={loadMoreRef} style={{ height: 1 }} aria-hidden="true" />
-         </>
-  )}
-</section>
+                    <AudioPlayer
+                      audioUrlMp3={article.audioUrlMp3 ?? null}
+                      audioUrlOgg={article.audioUrlOgg ?? null}
+                      audioUrlWebm={article.audioUrlWebm ?? null}
+                      audioUrl={article.audioUrl ?? null}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div ref={loadMoreRef} style={{ height: 1 }} aria-hidden="true" />
+          </>
+        )}
+      </section>
+    </main>
   </>
 );
-};
   export default Home;
