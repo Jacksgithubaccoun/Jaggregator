@@ -411,7 +411,8 @@ const Home: React.FC = () => {
                         <article
                           style={{
                             marginTop: 10,
-                            maxwidth: 700,
+                            margin: '10px auto',
+                            maxWidth: 700,
                             maxHeight: 300,
                             overflowY: 'auto',
                             backgroundColor: '#111',
