@@ -550,11 +550,10 @@ return (
   {expandedArticle === article.link && (
   loadingFullArticle ? (
     <div style={styles.fullArticleContent}>Loading full article...</div>
-  ) : data ? (
-    <ArticleContent 
-      title={data.title} 
-      htmlContent={data.text} 
-      images={data.images || []} 
+  ) : expandedContent ? (
+    <div
+      style={styles.fullArticleContent}
+      dangerouslySetInnerHTML={{ __html: expandedContent }}
     />
   ) : (
     <div style={styles.fullArticleContent}>Failed to load article.</div>
