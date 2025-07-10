@@ -4,12 +4,7 @@ import { Readability } from '@mozilla/readability';
 import Parser from 'rss-parser';
 
 const parser = new Parser({
-  customFields: {
-    item: [
-      ['itunes:transcript', 'transcript'], // pull transcript from itunes:transcript if available
-      ['itunes:summary', 'itunesSummary'], // optional fallback summary
-    ],
-  },
+  // No itunes custom fields since you want source data only
 });
 
 function isValidHttpUrl(urlString: string) {
@@ -29,36 +24,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Append cacheBust query param to avoid stale caches
     const cacheBustedUrl = `${url}${url.includes('?') ? '&' : '?'}cacheBust=${Date.now()}`;
-const feed = await parser.parseURL(cacheBustedUrl);
+    const feed = await parser.parseURL(cacheBustedUrl);
 
+    // Map through feed items, parse articles and extract images
     const articles = await Promise.all(
       feed.items.map(async (item) => {
-        // Detect audio URLs from enclosure
+        // Audio detection from enclosure, proxy URLs if found
         const audioUrlMp3 = item.enclosure?.type === 'audio/mpeg' ? item.enclosure.url : null;
         const audioUrlOgg = item.enclosure?.type === 'audio/ogg' ? item.enclosure.url : null;
         const audioUrlWebm = item.enclosure?.type === 'audio/webm' ? item.enclosure.url : null;
         const audioUrl = audioUrlMp3 || audioUrlOgg || audioUrlWebm;
 
-        // Extract transcript from itunes:transcript field or fallback to itunesSummary or empty
-        const transcript = item.transcript || item.itunesSummary || '';
-
         if (audioUrl) {
           return {
             title: item.title || 'No title',
-            content: '', // avoid loading audio in content to keep it lazy
-            audioUrl: `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`, // proxy instead of direct load
-            transcript,
+            content: '', // no HTML content for audio items
+            audioUrl: `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`, // proxy for audio
+            transcript: '', // you can add if you want from your source
             link: item.link || '',
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.itunes?.image || feed.image?.url || '',
+            thumbnail: '', // no thumbnail for audio for now
             description: item.contentSnippet || item.summary || '',
             tags: ['audio'],
           };
         }
 
-        // Validate article link
+        // Validate article URL
         if (!item.link || !isValidHttpUrl(item.link)) {
           console.warn('Skipping invalid article link:', item.link);
           return {
@@ -69,12 +63,13 @@ const feed = await parser.parseURL(cacheBustedUrl);
             link: item.link || '',
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.enclosure?.url || item.itunes?.image || '',
+            thumbnail: '',
             description: item.contentSnippet || '',
             tags: ['article'],
           };
         }
 
+        // Try to fetch and parse article HTML content + extract images
         try {
           const response = await fetch(item.link);
           if (!response.ok) throw new Error(`Failed to fetch: ${item.link}`);
@@ -84,6 +79,13 @@ const feed = await parser.parseURL(cacheBustedUrl);
           const reader = new Readability(dom.window.document);
           const article = reader.parse();
 
+          // Extract all image URLs from article content
+          const images = article?.content
+            ? Array.from(new JSDOM(article.content).window.document.querySelectorAll('img'))
+                .map(img => img.src)
+                .filter(src => src.startsWith('http'))
+            : [];
+
           return {
             title: article?.title || item.title || 'No title',
             content: article?.content || '<p>No content available</p>',
@@ -92,9 +94,10 @@ const feed = await parser.parseURL(cacheBustedUrl);
             link: item.link,
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.enclosure?.url || item.itunes?.image || '',
+            thumbnail: images[0] || '', // use first image as thumbnail if exists
             description: item.contentSnippet || item.summary || '',
             tags: ['article'],
+            images, // array of image URLs extracted from content
           };
         } catch (error) {
           console.error('Error fetching/parsing article:', item.link, error);
@@ -106,7 +109,7 @@ const feed = await parser.parseURL(cacheBustedUrl);
             link: item.link,
             pubDate: item.pubDate || '',
             source: feed.title || '',
-            thumbnail: item.enclosure?.url || '',
+            thumbnail: '',
             description: item.contentSnippet || '',
             tags: ['article'],
           };
@@ -114,33 +117,22 @@ const feed = await parser.parseURL(cacheBustedUrl);
       })
     );
 
+    // Filter out any null or invalid results (if any)
     const filteredArticles = articles.filter(Boolean);
-    filteredArticles.sort((a, b) => {
-  const dateA = new Date(a.pubDate || 0).getTime();
-  const dateB = new Date(b.pubDate || 0).getTime();
-  return dateB - dateA; // newest first
-});
 
-res.setHeader('Cache-Control', 'no-store'); // optional, disables caching
+    // Sort articles by newest pubDate first
+    filteredArticles.sort((a, b) => {
+      const dateA = new Date(a.pubDate || 0).getTime();
+      const dateB = new Date(b.pubDate || 0).getTime();
+      return dateB - dateA;
+    });
+
+    // Send response once with all processed articles
+    res.setHeader('Cache-Control', 'no-store'); // optional no-cache
     res.status(200).json({ articles: filteredArticles });
+
   } catch (error) {
     console.error('Failed to fetch or parse RSS feed:', error);
     res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
-  }
-}
-    // Extract image URLs from the article content
-    const contentDom = new JSDOM(article.content);
-    const images = Array.from(contentDom.window.document.querySelectorAll('img'))
-      .map((img) => img.src)
-      .filter((src) => src && src.startsWith('http'));
-
-    res.status(200).json({
-      title: article.title,
-      content: article.content, // HTML string
-      images, // array of image URLs
-    });
-  } catch (error) {
-    console.error('Error fetching/parsing article:', error);
-    res.status(500).json({ error: 'Error fetching or parsing article' });
   }
 }
