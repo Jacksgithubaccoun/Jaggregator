@@ -504,6 +504,53 @@ return (
         ) : (
           <>
             <ul style={styles.articleList}>
+
+{visibleArticles.map((article) => (
+  <li key={article.link} style={styles.articleItem}>
+    {article.thumbnail && <img src={article.thumbnail} alt="" style={styles.thumbnail} />}
+    <div style={styles.articleContent}>
+      <a href={article.link} target="_blank" rel="noopener noreferrer" style={styles.articleTitle}>
+        {article.title}
+      </a>
+      <p style={styles.articleDescription}>{article.description}</p>
+      <div style={styles.articleMeta}>
+        {article.source} · {article.pubDate}
+      </div>
+
+      {article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm || article.audioUrl ? (
+        <AudioPlayer
+          audioUrlMp3={article.audioUrlMp3 ?? null}
+          audioUrlOgg={article.audioUrlOgg ?? null}
+          audioUrlWebm={article.audioUrlWebm ?? null}
+          audioUrl={article.audioUrl ?? null}
+        />
+      ) : (
+        <>
+          <button
+  onClick={() => {
+    if (expandedContent === article.link) {
+      setExpandedContent('');
+    } else {
+      setExpandedContent(article.link);
+    }
+  }}
+>
+  {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
+</button>
+{expandedArticle === article.link && (
+  <div style={styles.fullArticleContent}>
+    {loadingFullArticle
+      ? 'Loading full article...'
+      : expandedContent}
+  </div>
+)}
+        </>
+      )}
+    </div>
+  </li>
+))
+
+=======
               {visibleArticles.map((article) => (
                 <li key={article.link} style={styles.articleItem}>
                   {article.thumbnail && <img src={article.thumbnail} alt="" style={styles.thumbnail} />}
