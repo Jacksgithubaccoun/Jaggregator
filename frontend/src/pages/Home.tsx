@@ -475,7 +475,7 @@ uniqueArticles.sort((a, b) =>
           </ul>
           
 
-          <ul> 
+          
  <ul>
   {visibleArticles.map((article, index) => (
     <li key={index}>
