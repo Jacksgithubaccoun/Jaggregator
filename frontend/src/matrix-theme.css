@@ -46,3 +46,20 @@ button:hover {
 h1 {
   animation: glow 2s infinite ease-in-out;
 }
+.article-body {
+  max-width: 100%;
+  overflow-x: auto;
+  word-break: break-word;
+}
+
+.article-body img,
+.article-body video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.article-body iframe {
+  max-width: 100%;
+  height: auto;
+}
