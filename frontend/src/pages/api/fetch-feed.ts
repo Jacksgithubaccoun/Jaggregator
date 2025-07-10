@@ -1,114 +1,140 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { JSDOM } from 'jsdom';
+import { Readability } from '@mozilla/readability';
 import Parser from 'rss-parser';
 
-type Article = {
-  title: string;
-  link: string;
-  pubDate: string;
-  source: string;
-  description: string;
-  tags: string[];
-  thumbnail: string;
-};
+const parser = new Parser({
+  // No itunes custom fields since you want source data only
+});
 
-const sourceBiasMap: Record<string, string> = {
-  'cnn.com': 'left wing',
-  'foxnews.com': 'right wing',
-};
-
-const sourceThumbnailMap: Record<string, string> = Object.fromEntries(
-  Object.keys(sourceBiasMap).map((domain) => [
-    domain,
-    `https://logo.clearbit.com/${domain}`,
-  ])
-);
-
-const detectTags = (article: Article): string[] => {
-  const tags: string[] = [];
-  const title = article.title.toLowerCase();
-  const description = article.description.toLowerCase();
-  const isAudio =
-    title.includes('podcast') ||
-    description.includes('audio') ||
-    article.link.endsWith('.mp3');
-
-  tags.push(isAudio ? 'audio' : 'article');
-
-  let domain = '';
+function isValidHttpUrl(urlString: string) {
   try {
-    domain = new URL(article.link).hostname.replace(/^www\./, '');
+    const url = new URL(urlString);
+    return url.protocol === 'http:' || url.protocol === 'https:';
   } catch {
-    domain = article.source?.toLowerCase() ?? '';
+    return false;
   }
-
-  const bias = sourceBiasMap[domain];
-  if (bias) tags.push(bias);
-
-  return tags;
-};
-
-const getThumbnail = (article: Article): string => {
-  let domain = '';
-  try {
-    domain = new URL(article.link).hostname.replace(/^www\./, '');
-  } catch {
-    domain = article.source?.toLowerCase() ?? '';
-  }
-
-  return (
-    sourceThumbnailMap[domain] || 'https://via.placeholder.com/40?text=No+Logo'
-  );
-};
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const feeds: string[] = req.body.feeds;
-
-  if (!Array.isArray(feeds) || feeds.length === 0) {
-    return res.status(400).json({ error: 'feeds must be a non-empty array' });
-  }
-
-  const parser = new Parser();
-  const allArticles: Article[] = [];
-
-  for (const feedUrl of feeds.slice(0, 10)) {
-    try {
-      const feed = await parser.parseURL(feedUrl);
-      const source = feed.title || 'RSS Feed';
-
-      const articles = (feed.items || []).slice(0, 15).map((item: any) => {
-        const article: Article = {
-          title: item.title || 'No title',
-          link: item.link || '',
-          pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
-          source,
-          description: item.contentSnippet || item.content || '',
-          tags: [],
-          thumbnail: '',
-        };
-
-        article.tags = detectTags(article);
-        article.thumbnail = getThumbnail(article);
-        return article;
-      });
-
-      allArticles.push(...articles);
-    } catch (err: any) {
-      console.warn(`Failed to parse ${feedUrl}: ${err.message}`);
-    }
-  }
-
-  allArticles.sort(
-    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-  );
-
-  return res.status(200).json(allArticles);
 }
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { url } = req.query;
+
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'Missing URL' });
+  }
+
+  try {
+    // Append cacheBust query param to avoid stale caches
+    const cacheBustedUrl = `${url}${url.includes('?') ? '&' : '?'}cacheBust=${Date.now()}`;
+    const feed = await parser.parseURL(cacheBustedUrl);
+
+    // Map through feed items, parse articles and extract images
+    const articles = await Promise.all(
+      feed.items.map(async (item) => {
+        // Audio detection from enclosure, proxy URLs if found
+        const audioUrlMp3 = item.enclosure?.type === 'audio/mpeg' ? item.enclosure.url : null;
+        const audioUrlOgg = item.enclosure?.type === 'audio/ogg' ? item.enclosure.url : null;
+        const audioUrlWebm = item.enclosure?.type === 'audio/webm' ? item.enclosure.url : null;
+        const audioUrl = audioUrlMp3 || audioUrlOgg || audioUrlWebm;
+
+        if (audioUrl) {
+          return {
+            title: item.title || 'No title',
+            content: '', // no HTML content for audio items
+            audioUrl: `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`, // proxy for audio
+            transcript: '', // you can add if you want from your source
+            link: item.link || '',
+            pubDate: item.pubDate || '',
+            source: feed.title || '',
+            thumbnail: '', // no thumbnail for audio for now
+            description: item.contentSnippet || item.summary || '',
+            tags: ['audio'],
+          };
+        }
+
+        // Validate article URL
+        if (!item.link || !isValidHttpUrl(item.link)) {
+          console.warn('Skipping invalid article link:', item.link);
+          return {
+            title: item.title || 'No title',
+            content: '<p>Invalid or missing article link.</p>',
+            audioUrl: null,
+            transcript: '',
+            link: item.link || '',
+            pubDate: item.pubDate || '',
+            source: feed.title || '',
+            thumbnail: '',
+            description: item.contentSnippet || '',
+            tags: ['article'],
+          };
+        }
+
+        // Try to fetch and parse article HTML content + extract images
+        try {
+          const response = await fetch(item.link);
+          if (!response.ok) throw new Error(`Failed to fetch: ${item.link}`);
+
+          const html = await response.text();
+          const dom = new JSDOM(html, { url: item.link });
+          const reader = new Readability(dom.window.document);
+          const article = reader.parse();
+
+          // Extract all image URLs from article content
+          const images = article?.content
+            ? Array.from(new JSDOM(article.content).window.document.querySelectorAll('img'))
+                .map(img => img.src)
+                .filter(src => src.startsWith('http'))
+            : [];
+
+          return {
+            title: article?.title || item.title || 'No title',
+            content: article?.content || '<p>No content available</p>',
+            audioUrl: null,
+            transcript: '', // no transcript for regular articles
+            link: item.link,
+            pubDate: item.pubDate || '',
+            source: feed.title || '',
+            thumbnail: images[0] || '', // use first image as thumbnail if exists
+            description: item.contentSnippet || item.summary || '',
+            tags: ['article'],
+            images, // array of image URLs extracted from content
+          };
+        } catch (error) {
+          console.error('Error fetching/parsing article:', item.link, error);
+          return {
+            title: item.title || 'No title',
+            content: '<p>Failed to load article content.</p>',
+            audioUrl: null,
+            transcript: '',
+            link: item.link,
+            pubDate: item.pubDate || '',
+            source: feed.title || '',
+            thumbnail: '',
+            description: item.contentSnippet || '',
+            tags: ['article'],
+          };
+        }
+      })
+    );
+
+    // Filter out any null or invalid results (if any)
+    const filteredArticles = articles.filter(Boolean);
+
+    // Sort articles by newest pubDate first
+    filteredArticles.sort((a, b) => {
+      const dateA = new Date(a.pubDate || 0).getTime();
+      const dateB = new Date(b.pubDate || 0).getTime();
+      return dateB - dateA;
+    });
+
+    // Send response once with all processed articles
+    res.setHeader('Cache-Control', 'no-store'); // optional no-cache
+    res.status(200).json({ articles: filteredArticles });
+
+  } catch (error) {
+    console.error('Failed to fetch or parse RSS feed:', error);
+    res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
+  }
+}
+
 
