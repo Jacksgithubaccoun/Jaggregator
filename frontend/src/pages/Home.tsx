@@ -130,7 +130,29 @@ const Home: React.FC = () => {
   const [expandedContent, setExpandedContent] = useState<string>('');
 
     const clearError = () => setError('');
+  
+const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+  if (!loadMoreRef.current) return;
 
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && visibleCount < filteredArticlesSorted.length) {
+        setVisibleCount((prev) => prev + 10);
+      }
+    },
+    {
+      rootMargin: '100px',
+    }
+  );
+
+  observer.observe(loadMoreRef.current);
+
+  return () => {
+    if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
+  };
+}, [filteredArticlesSorted.length, visibleCount]);
+  
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setTypedKeys((prev) => {
@@ -198,7 +220,10 @@ const Home: React.FC = () => {
           (article, index, self) =>
             index === self.findIndex((a) => a.link === article.link)
         );
-
+        // ✅ Sort by date
+uniqueArticles.sort((a, b) =>
+  new Date(b.pubDate || b.isoDate).getTime() - new Date(a.pubDate || a.isoDate).getTime()
+);
         setArticles(uniqueArticles);
       } catch {
         setError('Failed to fetch articles from saved feeds.');
@@ -433,15 +458,13 @@ const Home: React.FC = () => {
               );
             })}
           </ul>
-          {visibleCount < filteredArticlesSorted.length && (
-            <button
-              onClick={() => setVisibleCount((v) => v + 10)}
-              style={styles.loadMoreButton}
-              disabled={loading}
-            >
-              Load More
-            </button>
-          )}
+          
+
+          <ul> 
+  {visibleArticles.map(...)} 
+</ul>
+<div ref={loadMoreRef} style={{ height: 1 }} />
+          
         </section>
 
         {showSecret && (
