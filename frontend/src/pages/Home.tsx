@@ -415,7 +415,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     color: '#888',
   },
-  fullArticleContent: {
+ fullArticleContent: {
   marginTop: 12,
   backgroundColor: '#111',
   padding: 12,
@@ -423,6 +423,8 @@ const styles: Record<string, React.CSSProperties> = {
   color: '#ccc',
   fontSize: 14,
   whiteSpace: 'pre-wrap',
+  maxWidth: '100%',
+  overflowX: 'auto',
 },
   loadMoreButton: {
     marginTop: 12,
