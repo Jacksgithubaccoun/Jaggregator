@@ -26,9 +26,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to parse article content' });
     }
 
+    // Use JSDOM to extract plain text from the HTML string returned by Readability
+    const contentDom = new JSDOM(article.content);
+    const textContent = contentDom.window.document.body.textContent || '';
+
     res.status(200).json({
       title: article.title,
-      content: article.content, // HTML string of the readable content
+      content: article.content,       // Optional: full HTML
+      text: textContent.trim(),       // ✅ Add this: clean plain-text version
     });
   } catch (error) {
     res.status(500).json({ error: 'Error fetching or parsing article' });
