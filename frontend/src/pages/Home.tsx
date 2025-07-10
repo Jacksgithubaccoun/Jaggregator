@@ -130,6 +130,26 @@ const Home: React.FC = () => {
   const [expandedContent, setExpandedContent] = useState<string>('');
 
     const clearError = () => setError('');
+
+  const filteredArticlesSorted = articles
+  .filter((article) => {
+    const titleMatches = article.title?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const sourceMatches = !sourceFilter || article.source === sourceFilter;
+
+    const tagsMatch =
+      selectedTags.length === 0 ||
+      selectedTags.every((tag) => article.tags?.includes(tag));
+
+    return titleMatches && sourceMatches && tagsMatch;
+  })
+  .sort((a, b) => {
+    const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime();
+    const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime();
+    return dateB - dateA; // newest first
+  });
+
+const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
   
 const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   useEffect(() => {
