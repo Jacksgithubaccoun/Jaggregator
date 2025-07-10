@@ -535,26 +535,29 @@ return (
                       />
                     ) : (
                       <>
-                        <button
-  onClick={() => {
-    if (expandedArticle === article.link) {
-      setExpandedArticle(null);
-    } else {
-      setExpandedArticle(article.link);
-    }
-  }}
->
- {expandedArticle === article.link && (
-  loadingFullArticle ? (
-    <div style={styles.fullArticleContent}>Loading full article...</div>
-  ) : (
-    <ArticleContent
-      title={article.title}
-      text={fullArticleCache.current[article.link] || expandedContent}
-    />
-  )
-)}
-                      </>
+  <button
+    onClick={() => {
+      if (expandedArticle === article.link) {
+        setExpandedArticle(null);
+      } else {
+        setExpandedArticle(article.link);
+      }
+    }}
+  >
+    {expandedArticle === article.link ? 'Collapse Article' : 'Expand Article'}
+  </button>
+
+  {expandedArticle === article.link && (
+    loadingFullArticle ? (
+      <div style={styles.fullArticleContent}>Loading full article...</div>
+    ) : (
+      <ArticleContent
+        title={article.title}
+        text={fullArticleCache.current[article.link] || expandedContent}
+      />
+    )
+  )}
+</>
                     )}
                   </div>
                 </li>
