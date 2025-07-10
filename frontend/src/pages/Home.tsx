@@ -399,7 +399,11 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
   },
   articleContent: {
-    flex: 1,
+     flex: 1,
+  maxWidth: 800,          // ✅ limit width for readability
+  margin: '0 auto',       // ✅ center the content horizontally
+  padding: '1rem',        // ✅ optional: add inner spacing
+}
   },
   articleTitle: {
     color: '#0f0',
