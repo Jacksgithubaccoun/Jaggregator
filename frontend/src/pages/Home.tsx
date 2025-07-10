@@ -385,7 +385,7 @@ const Home: React.FC = () => {
   )}
 </section>
         
-        <section aria
+      </section>
 
 
 const styles: Record<string, React.CSSProperties> = {
