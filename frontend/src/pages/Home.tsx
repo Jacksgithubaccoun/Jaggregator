@@ -414,6 +414,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     color: '#888',
   },
+  fullArticleContent: {
+  marginTop: 12,
+  backgroundColor: '#111',
+  padding: 12,
+  borderRadius: 4,
+  color: '#ccc',
+  fontSize: 14,
+  whiteSpace: 'pre-wrap',
+},
   loadMoreButton: {
     marginTop: 12,
     padding: '8px 16px',
@@ -531,24 +540,21 @@ return (
                     ) : (
                       <>
                         <button
-                          onClick={() => {
-                            if (expandedContent === article.link) {
-                              setExpandedContent('');
-                            } else {
-                              loadFullArticle(article.link); // your function to load full article
-                              setExpandedContent(article.link);
-                            }
-                          }}
+                         onClick={() => {
+  if (expandedArticle === article.link) {
+    setExpandedArticle(null);
+  } else {
+    setExpandedArticle(article.link);
+  }
+}}
                         >
-                          {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
-                        </button>
-                        {expandedContent === article.link && (
-                          <div style={styles.fullArticleContent}>
-                            {loadingFullArticle
-                              ? 'Loading full article...'
-                              : fullArticleCache.current[article.link]}
-                          </div>
-                        )}
+                          {expandedArticle === article.link && (
+  <div style={styles.fullArticleContent}>
+    {loadingFullArticle
+      ? 'Loading full article...'
+      : fullArticleCache.current[article.link]}
+  </div>
+)}
                       </>
                     )}
                   </div>
