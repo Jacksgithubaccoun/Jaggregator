@@ -39,7 +39,7 @@ function AudioPlayer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-
+  
   const hasAudio = !!audioUrlMp3 || !!audioUrlOgg || !!audioUrlWebm || !!audioUrl;
 
   const handleLoad = () => {
@@ -135,7 +135,7 @@ const Home: React.FC = () => {
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string>('');
   const [loadingProgress, setLoadingProgress] = useState(0);
-  
+  const [data, setData] = useState<{ title: string; text: string; images?: string[] } | null>(null);
   const fullArticleCache = useRef<Record<string, string>>({});
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const clearError = () => setError('');
