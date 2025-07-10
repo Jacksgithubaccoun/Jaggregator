@@ -403,7 +403,6 @@ const styles: Record<string, React.CSSProperties> = {
   maxWidth: 800,          // ✅ limit width for readability
   margin: '0 auto',       // ✅ center the content horizontally
   padding: '1rem',        // ✅ optional: add inner spacing
-}
   },
   articleTitle: {
     color: '#0f0',
