@@ -276,7 +276,6 @@ uniqueArticles.sort((a, b) =>
     return matchesTags && matchesSearch && matchesSource;
   });
 
-  const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
   useEffect(() => {
     if (!expandedArticle) {
