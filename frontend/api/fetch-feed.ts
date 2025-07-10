@@ -1,3 +1,5 @@
+// pages/api/fetch-feeds.ts (or your equivalent)
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Parser from 'rss-parser';
 
@@ -9,6 +11,7 @@ type Article = {
   description: string;
   tags: string[];
   thumbnail: string;
+  audioUrl?: string | null;
 };
 
 const sourceBiasMap: Record<string, string> = {
@@ -60,8 +63,6 @@ const getThumbnail = (article: Article): string => {
   );
 };
 
-import type { NextApiRequest, NextApiResponse } from 'next';
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -86,6 +87,7 @@ export default async function handler(
       const source = feed.title || 'RSS Feed';
 
       const articles = (feed.items || []).slice(0, 15).map((item) => {
+        const isAudio = item.enclosure?.type?.startsWith('audio/');
         const article: Article = {
           title: item.title || 'No title',
           link: item.link || '',
@@ -94,6 +96,7 @@ export default async function handler(
           description: item.contentSnippet || item.content || '',
           tags: [],
           thumbnail: '',
+          audioUrl: isAudio ? item.enclosure.url : null,
         };
 
         article.tags = detectTags(article);
