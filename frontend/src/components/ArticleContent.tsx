@@ -5,9 +5,12 @@ interface ArticleContentProps {
   text: string;
 }
 
-export const ArticleContent: React.FC<ArticleContentProps> = ({ title, text }) => {
-  // Split the text into paragraphs
-  const paragraphs = text.split(/\n\s*\n/);
+export const ArticleContent = ({ title, htmlContent }) => (
+  <article>
+    <h1>{title}</h1>
+    <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+  </article>
+);
 
   // Return JSX
   return (
