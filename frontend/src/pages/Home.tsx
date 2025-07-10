@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import FeedsManager from '../components/FeedsManager';
 import MatrixRain from '../components/MatrixRain';
 import '../matrix-theme.css';
-import ArticleContent from '../components/ArticleContent';
+import { ArticleContent } from '../components/ArticleContent';
 
 const allTags = ['audio', 'article', 'left wing', 'right wing', 'alternative'];
 
