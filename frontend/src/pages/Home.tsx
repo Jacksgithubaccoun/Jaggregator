@@ -553,7 +553,7 @@ return (
   ) : data ? (
     <ArticleContent 
       title={data.title} 
-      text={data.text} 
+      htmlContent={data.text} 
       images={data.images || []} 
     />
   ) : (
