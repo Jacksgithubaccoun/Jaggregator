@@ -538,7 +538,7 @@ const styles: Record<string, React.CSSProperties> = {
           </button>
           {expandedContent === article.link && (
             <div style={styles.fullArticleContent}>
-              {loadingFullArticle ? 'Loading full article...' : /* render full article here */}
+              {loadingFullArticle ? 'Loading full article...' : 
               {fullArticleCache.current[article.link]}
             </div>
           )}
