@@ -115,6 +115,13 @@ const feed = await parser.parseURL(cacheBustedUrl);
     );
 
     const filteredArticles = articles.filter(Boolean);
+    filteredArticles.sort((a, b) => {
+  const dateA = new Date(a.pubDate || 0).getTime();
+  const dateB = new Date(b.pubDate || 0).getTime();
+  return dateB - dateA; // newest first
+});
+
+res.setHeader('Cache-Control', 'no-store'); // optional, disables caching
     res.status(200).json({ articles: filteredArticles });
   } catch (error) {
     console.error('Failed to fetch or parse RSS feed:', error);
