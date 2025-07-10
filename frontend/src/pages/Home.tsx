@@ -525,23 +525,24 @@ const styles: Record<string, React.CSSProperties> = {
       ) : (
         <>
           <button
-            onClick={() => {
-              if (expandedContent === article.link) {
-                setExpandedContent('');
-              } else {
-                setExpandedContent(article.link);
-                loadFullArticle(article.link); // function to load full content if you have one
-              }
-            }}
-          >
-            {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
-          </button>
-          {expandedContent === article.link && (
-            <div style={styles.fullArticleContent}>
-              {loadingFullArticle ? 'Loading full article...' : 
-              {fullArticleCache.current[article.link]}
-            </div>
-          )}
+  onClick={() => {
+    if (expandedContent === article.link) {
+      setExpandedContent('');
+    } else {
+      loadFullArticle(article.link); // your function to load full article
+      setExpandedContent(article.link);
+    }
+  }}
+>
+  {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
+</button>
+{expandedContent === article.link && (
+  <div style={styles.fullArticleContent}>
+    {loadingFullArticle
+      ? 'Loading full article...'
+      : fullArticleCache.current[article.link]}
+  </div>
+)}
         </>
       )}
     </div>
