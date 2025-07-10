@@ -133,7 +133,10 @@ const Home: React.FC = () => {
   const [showSecret, setShowSecret] = useState(false);
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string>('');
-
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  
+  const fullArticleCache = useRef<Record<string, string>>({});
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const clearError = () => setError('');
 
   // Unified filtering and sorting
@@ -157,10 +160,12 @@ const Home: React.FC = () => {
     if (!loadMoreRef.current) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && visibleCount < filteredAndSortedArticles.length) {
-          setVisibleCount((prev) => prev + 10);
-        }
-      },
+       if (entries[0].isIntersecting && visibleCount < filteredAndSortedArticles.length) {
+  setVisibleCount((prev) => {
+    const nextCount = prev + 10;
+    return nextCount > filteredAndSortedArticles.length ? filteredAndSortedArticles.length : nextCount;
+  });
+}
       { rootMargin: '100px' }
     );
 
@@ -186,45 +191,60 @@ const Home: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Load feeds from localStorage and fetch articles
-  useEffect(() => {
-    const loadFeeds = async () => {
-      try {
-        const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
-        setFeeds(savedFeeds);
+useEffect(() => {
+  const loadFeeds = async () => {
+    setLoading(true);
+    setLoadingProgress(0);
+    try {
+      const savedFeeds: string[] = JSON.parse(localStorage.getItem('feeds') || '[]');
+      setFeeds(savedFeeds);
 
-        const articlesArrays = await Promise.all(
-          savedFeeds.map(async (url) => {
-            try {
-              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-              if (!res.ok) return [];
-              const data = await res.json();
-              return data.articles || [];
-            } catch {
-              return [];
-            }
-          })
-        );
+      let completed = 0;
+      const total = savedFeeds.length;
 
-        const allArticles = articlesArrays.flat();
-        const uniqueArticles = allArticles.filter(
-          (article, index, self) => index === self.findIndex((a) => a.link === article.link)
-        );
+      const articlesArrays = await Promise.all(
+        savedFeeds.map(async (url) => {
+          try {
+            const res = await fetch(
+              `/api/fetch-article?url=${encodeURIComponent(url)}&cacheBust=${Date.now()}`,
+              { cache: 'no-store' }
+            );
+            if (!res.ok) return [];
+            const data = await res.json();
 
-        uniqueArticles.sort((a, b) => {
-          const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
-          const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
-          return dateB - dateA;
-        });
+            completed++;
+            setLoadingProgress((completed / total) * 100);
 
-        setArticles(uniqueArticles);
-      } catch {
-        setError('Failed to fetch articles from saved feeds.');
-      }
-    };
+            return data.articles || [];
+          } catch {
+            completed++;
+            setLoadingProgress((completed / total) * 100);
+            return [];
+          }
+        })
+      );
 
-    loadFeeds();
-  }, []);
+      const allArticles = articlesArrays.flat();
+      const uniqueArticles = allArticles.filter(
+        (article, index, self) => index === self.findIndex((a) => a.link === article.link)
+      );
+
+      uniqueArticles.sort((a, b) => {
+        const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
+        const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
+        return dateB - dateA;
+      });
+
+      setArticles(uniqueArticles);
+    } catch {
+      setError('Failed to fetch articles from saved feeds.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadFeeds();
+}, []);
 
   useEffect(() => {
     localStorage.setItem('feeds', JSON.stringify(feeds));
@@ -264,43 +284,50 @@ const Home: React.FC = () => {
     );
   };
 
-  // Fetch full article content on expand (if no audio)
-  useEffect(() => {
-    if (!expandedArticle) {
-      setExpandedContent('');
+useEffect(() => {
+  if (!expandedArticle) {
+    setExpandedContent('');
+    setLoadingFullArticle(false);
+    return;
+  }
+
+  const selected = articles.find((a) => a.link === expandedArticle);
+
+  if (
+    selected?.audioUrl ||
+    selected?.audioUrlMp3 ||
+    selected?.audioUrlOgg ||
+    selected?.audioUrlWebm
+  ) {
+    setExpandedContent('');
+    setLoadingFullArticle(false);
+    return;
+  }
+
+  if (fullArticleCache.current[expandedArticle]) {
+    setExpandedContent(fullArticleCache.current[expandedArticle]);
+    setLoadingFullArticle(false);
+    return;
+  }
+
+  const fetchFullArticle = async () => {
+    setLoadingFullArticle(true);
+    try {
+      const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+      if (!res.ok) throw new Error('Failed to load full article');
+      const data = await res.json();
+      fullArticleCache.current[expandedArticle] = data.content || 'No content available.';
+      setExpandedContent(fullArticleCache.current[expandedArticle]);
+    } catch {
+      setExpandedContent('Failed to load full article.');
+    } finally {
       setLoadingFullArticle(false);
-      return;
     }
+  };
 
-    const selected = articles.find((a) => a.link === expandedArticle);
+  fetchFullArticle();
+}, [expandedArticle, articles]);
 
-    if (
-      selected?.audioUrl ||
-      selected?.audioUrlMp3 ||
-      selected?.audioUrlOgg ||
-      selected?.audioUrlWebm
-    ) {
-      setExpandedContent('');
-      setLoadingFullArticle(false);
-      return;
-    }
-
-    const fetchFullArticle = async () => {
-      setLoadingFullArticle(true);
-      try {
-        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
-        if (!res.ok) throw new Error('Failed to load full article');
-        const data = await res.json();
-        setExpandedContent(data.content || 'No content available.');
-      } catch {
-        setExpandedContent('Failed to load full article.');
-      } finally {
-        setLoadingFullArticle(false);
-      }
-    };
-
-    fetchFullArticle();
-  }, [expandedArticle, articles]);
 const styles: Record<string, React.CSSProperties> = {
   
   container: {
@@ -422,7 +449,33 @@ const styles: Record<string, React.CSSProperties> = {
         error={error}
         clearError={clearError}
       />
-
+      
+  {loading && (
+    <div
+      style={{
+        height: 6,
+        backgroundColor: '#222',
+        borderRadius: 3,
+        marginBottom: 12,
+        overflow: 'hidden',
+      }}
+      aria-label="Loading progress"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={loadingProgress}
+    >
+      <div
+        style={{
+          height: '100%',
+          width: `${loadingProgress}%`,
+          backgroundColor: '#0f0',
+          transition: 'width 0.3s ease',
+        }}
+      />
+    </div>
+  )}
+      
       <section aria-label="Search articles" style={styles.controlsContainer}>
         <input
           type="text"
@@ -476,6 +529,7 @@ const styles: Record<string, React.CSSProperties> = {
               </li>
             ))}
           </ul>
+    <div ref={loadMoreRef} style={{ height: 1 }} aria-hidden="true" />
         )}
       </section>
     </main>
