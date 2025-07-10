@@ -202,42 +202,42 @@ useEffect(() => {
 
       let completed = 0;
       const total = savedFeeds.length;
+let completed = 0;
+const total = savedFeeds.length;
 
-      const articlesArrays = await Promise.all(
-        savedFeeds.map(async (url) => {
-          try {
-            const res = await fetch(
-              `/api/fetch-article?url=${encodeURIComponent(url)}&cacheBust=${Date.now()}`,
-              { cache: 'no-store' }
-            );
-            if (!res.ok) return [];
-            const data = await res.json();
-            completed++;
-          setLoadingProgress((completed / total) * 100); // update progress here
-          return data.articles;
-        } catch {
-            completed++;
-            setLoadingProgress((completed / total) * 100);
-
-            return data.articles || [];
-          } catch {
-            completed++;
-            setLoadingProgress((completed / total) * 100);
-            return [];
-          }
-        })
+const articlesArrays = await Promise.all(
+  savedFeeds.map(async (url) => {
+    try {
+      const res = await fetch(
+        `/api/fetch-article?url=${encodeURIComponent(url)}&cacheBust=${Date.now()}`,
+        { cache: 'no-store' }
       );
+      if (!res.ok) return [];
+      const data = await res.json();
 
-      const allArticles = articlesArrays.flat();
-      const uniqueArticles = allArticles.filter(
-        (article, index, self) => index === self.findIndex((a) => a.link === article.link)
-      );
+      completed++;
+      setLoadingProgress((completed / total) * 100);
 
-      uniqueArticles.sort((a, b) => {
-        const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
-        const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
-        return dateB - dateA;
-      });
+      return data.articles;
+    } catch {
+      completed++;
+      setLoadingProgress((completed / total) * 100);
+      return [];
+    }
+  })
+);
+
+const allArticles = articlesArrays.flat();
+
+const uniqueArticles = allArticles.filter(
+  (article, index, self) => index === self.findIndex((a) => a.link === article.link)
+);
+
+uniqueArticles.sort((a, b) => {
+  const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
+  const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
+  return dateB - dateA; // newest first
+});
 
       setArticles(uniqueArticles);
     } catch {
