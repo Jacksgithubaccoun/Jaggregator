@@ -29,7 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const feed = await parser.parseURL(url);
+    const cacheBustedUrl = `${url}${url.includes('?') ? '&' : '?'}cacheBust=${Date.now()}`;
+const feed = await parser.parseURL(cacheBustedUrl);
 
     const articles = await Promise.all(
       feed.items.map(async (item) => {
