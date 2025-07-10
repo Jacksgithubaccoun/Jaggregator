@@ -424,7 +424,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 };
-  return (
+return (
   <>
     <MatrixRain />
 
@@ -452,31 +452,32 @@ const styles: Record<string, React.CSSProperties> = {
         clearError={clearError}
       />
       
-{loading && (
-  <div style={{ width: '100%', background: '#eee', height: '6px', marginBottom: '1rem' }}>
-    <div
-      style={{
-        width: `${loadingProgress}%`,
-        background: '#4caf50',
-        height: '100%',
-        transition: 'width 0.3s ease-in-out',
-      }}
-      aria-label="Loading progress"
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={loadingProgress}
-    >
-      <div
-        style={{
-          height: '100%',
-          width: `${loadingProgress}%`,
-          backgroundColor: '#0f0',
-          transition: 'width 0.3s ease',
-        }}
-      />
-    </div>
-  )}
+      {loading && (
+        <div style={{ width: '100%', background: '#eee', height: '6px', marginBottom: '1rem' }}>
+          <div
+            style={{
+              width: `${loadingProgress}%`,
+              background: '#4caf50',
+              height: '100%',
+              transition: 'width 0.3s ease-in-out',
+            }}
+            aria-label="Loading progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={loadingProgress}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${loadingProgress}%`,
+                backgroundColor: '#0f0',
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+        </div>
+      )}
       
       <section aria-label="Search articles" style={styles.controlsContainer}>
         <input
@@ -497,58 +498,63 @@ const styles: Record<string, React.CSSProperties> = {
         />
       </section>
 
-     <section style={styles.articlesSection}>
+      <section style={styles.articlesSection}>
         {visibleArticles.length === 0 ? (
           <p style={styles.statusText}>No articles found.</p>
         ) : (
           <>
             <ul style={styles.articleList}>
-{visibleArticles.map((article) => (
-  <li key={article.link} style={styles.articleItem}>
-    {article.thumbnail && <img src={article.thumbnail} alt="" style={styles.thumbnail} />}
-    <div style={styles.articleContent}>
-      <a href={article.link} target="_blank" rel="noopener noreferrer" style={styles.articleTitle}>
-        {article.title}
-      </a>
-      <p style={styles.articleDescription}>{article.description}</p>
-      <div style={styles.articleMeta}>
-        {article.source} · {article.pubDate}
-      </div>
+              {visibleArticles.map((article) => (
+                <li key={article.link} style={styles.articleItem}>
+                  {article.thumbnail && <img src={article.thumbnail} alt="" style={styles.thumbnail} />}
+                  <div style={styles.articleContent}>
+                    <a
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.articleTitle}
+                    >
+                      {article.title}
+                    </a>
+                    <p style={styles.articleDescription}>{article.description}</p>
+                    <div style={styles.articleMeta}>
+                      {article.source} · {article.pubDate}
+                    </div>
 
-      {article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm || article.audioUrl ? (
-        <AudioPlayer
-          audioUrlMp3={article.audioUrlMp3 ?? null}
-          audioUrlOgg={article.audioUrlOgg ?? null}
-          audioUrlWebm={article.audioUrlWebm ?? null}
-          audioUrl={article.audioUrl ?? null}
-        />
-      ) : (
-        <>
-          <button
-  onClick={() => {
-    if (expandedContent === article.link) {
-      setExpandedContent('');
-    } else {
-      loadFullArticle(article.link); // your function to load full article
-      setExpandedContent(article.link);
-    }
-  }}
->
-  {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
-</button>
-{expandedContent === article.link && (
-  <div style={styles.fullArticleContent}>
-    {loadingFullArticle
-      ? 'Loading full article...'
-      : fullArticleCache.current[article.link]}
-  </div>
-)}
-        </>
-      )}
-    </div>
-  </li>
-))
-
+                    {article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm || article.audioUrl ? (
+                      <AudioPlayer
+                        audioUrlMp3={article.audioUrlMp3 ?? null}
+                        audioUrlOgg={article.audioUrlOgg ?? null}
+                        audioUrlWebm={article.audioUrlWebm ?? null}
+                        audioUrl={article.audioUrl ?? null}
+                      />
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (expandedContent === article.link) {
+                              setExpandedContent('');
+                            } else {
+                              loadFullArticle(article.link); // your function to load full article
+                              setExpandedContent(article.link);
+                            }
+                          }}
+                        >
+                          {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
+                        </button>
+                        {expandedContent === article.link && (
+                          <div style={styles.fullArticleContent}>
+                            {loadingFullArticle
+                              ? 'Loading full article...'
+                              : fullArticleCache.current[article.link]}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
             <div ref={loadMoreRef} style={{ height: 1 }} aria-hidden="true" />
           </>
         )}
@@ -556,5 +562,6 @@ const styles: Record<string, React.CSSProperties> = {
     </main>
   </>
 );
+
 };
   export default Home;
