@@ -180,7 +180,7 @@ const Home: React.FC = () => {
 }, [filteredAndSortedArticles.length, visibleCount]);
 
   useEffect(() => {
-  const handleKeyDown = ...
+  const handleKeyDown = (e: KeyboardEvent) => {
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
 }, [setShowSecret, setTypedKeys]);
