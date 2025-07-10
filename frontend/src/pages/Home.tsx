@@ -461,7 +461,7 @@ uniqueArticles.sort((a, b) =>
           
 
           <ul> 
-  {visibleArticles.map(...)} 
+  {visibleArticles.map(article, index)} 
 </ul>
 <div ref={loadMoreRef} style={{ height: 1 }} />
           
