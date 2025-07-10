@@ -476,7 +476,46 @@ uniqueArticles.sort((a, b) =>
           
 
           <ul> 
-  {visibleArticles.map(articles, index)} 
+ <ul>
+  {visibleArticles.map((article, index) => (
+    <li key={index}>
+      <div style={{ padding: '10px', borderBottom: '1px solid #333' }}>
+        <h3 style={{ color: '#ccc' }}>{article.title}</h3>
+        <p style={{ color: '#888' }}>{article.pubDate}</p>
+
+        <AudioPlayer
+          audioUrlMp3={article.audioUrlMp3}
+          audioUrlOgg={article.audioUrlOgg}
+          audioUrlWebm={article.audioUrlWebm}
+          audioUrl={article.audioUrl}
+        />
+
+        {expandedArticle === article.link &&
+          !loadingFullArticle &&
+          expandedContent &&
+          !(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
+            <article
+              style={{
+                marginTop: 10,
+                margin: '10px auto',
+                maxWidth: 700,
+                maxHeight: 300,
+                overflowY: 'auto',
+                backgroundColor: '#111',
+                padding: 10,
+                borderRadius: 4,
+                color: '#ccc',
+              }}
+              dangerouslySetInnerHTML={{ __html: expandedContent }}
+            />
+          )}
+
+        {loadingFullArticle && expandedArticle === article.link && (
+          <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
+        )}
+      </div>
+    </li>
+  ))}
 </ul>
 <div ref={loadMoreRef} style={{ height: 1 }} />
           
