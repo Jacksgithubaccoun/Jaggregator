@@ -128,3 +128,19 @@ res.setHeader('Cache-Control', 'no-store'); // optional, disables caching
     res.status(500).json({ error: 'Failed to fetch or parse RSS feed' });
   }
 }
+    // Extract image URLs from the article content
+    const contentDom = new JSDOM(article.content);
+    const images = Array.from(contentDom.window.document.querySelectorAll('img'))
+      .map((img) => img.src)
+      .filter((src) => src && src.startsWith('http'));
+
+    res.status(200).json({
+      title: article.title,
+      content: article.content, // HTML string
+      images, // array of image URLs
+    });
+  } catch (error) {
+    console.error('Error fetching/parsing article:', error);
+    res.status(500).json({ error: 'Error fetching or parsing article' });
+  }
+}
