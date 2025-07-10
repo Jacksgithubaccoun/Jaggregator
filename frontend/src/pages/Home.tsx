@@ -276,10 +276,6 @@ uniqueArticles.sort((a, b) =>
     return matchesTags && matchesSearch && matchesSource;
   });
 
-  const filteredArticlesSorted = filteredArticles.sort(
-    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-  );
-
   const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
 
   useEffect(() => {
