@@ -1,10 +1,27 @@
 // src/pages/Home.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import FeedsManager from '../components/FeedsManager';
 import MatrixRain from '../components/MatrixRain';
 import '../matrix-theme.css';
 
 const allTags = ['audio', 'article', 'left wing', 'right wing', 'alternative'];
+
+interface Article {
+  link: string;
+  title: string;
+  description?: string;
+  pubDate?: string;
+  isoDate?: string;
+  date?: string;
+  source?: string;
+  thumbnail?: string;
+  tags?: string[];
+  audioUrl?: string;
+  audioUrlMp3?: string;
+  audioUrlOgg?: string;
+  audioUrlWebm?: string;
+  feedUrl?: string;
+}
 
 function AudioPlayer({
   audioUrlMp3,
@@ -17,18 +34,12 @@ function AudioPlayer({
   audioUrlWebm?: string | null;
   audioUrl?: string | null;
 }) {
-  const [showPlayer, setShowPlayer] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const hasAudio =
-    !!audioUrlMp3 || !!audioUrlOgg || !!audioUrlWebm || !!audioUrl;
-
-  const proxyUrl = (originalUrl?: string | null) =>
-    originalUrl
-      ? `/api/proxy-audio?url=${encodeURIComponent(originalUrl)}`
-      : null;
+  const hasAudio = !!audioUrlMp3 || !!audioUrlOgg || !!audioUrlWebm || !!audioUrl;
 
   const handleLoad = () => {
     if (!hasAudio) return;
@@ -37,86 +48,80 @@ function AudioPlayer({
     setError(null);
   };
 
-  const handleCanPlay = () => {
-    setLoading(false);
-  };
-
+  const handleCanPlay = () => setLoading(false);
   const handleError = () => {
     setLoading(false);
     setError('Failed to load audio.');
   };
 
   const handlePauseClick = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    audioRef.current?.pause();
   };
 
- return (
-  <>
-    {!showPlayer ? (
-      <button
-        onClick={handleLoad}
-        style={{
-          background: '#444',
-          color: '#ccc',
-          border: 'none',
-          padding: '6px 12px',
-          borderRadius: 4,
-          cursor: hasAudio ? 'pointer' : 'not-allowed',
-          marginTop: 8,
-          opacity: hasAudio ? 1 : 0.5,
-        }}
-        disabled={!hasAudio}
-        title={hasAudio ? undefined : 'No audio available'}
-        aria-disabled={!hasAudio}
-      >
-        ▶️ Load Audio
-      </button>
-    ) : (
-      <>
-        {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
-        {error && <div style={{ color: '#f66', marginBottom: 8 }}>{error}</div>}
-        <audio
-          ref={audioRef}
-          controls
-          preload="none"
-          style={{ width: '100%' }}
-          onCanPlay={handleCanPlay}
-          onError={handleError}
-        >
-          {audioUrlMp3 && <source src={(audioUrlMp3)!} type="audio/mpeg" />}
-          {audioUrlOgg && <source src={(audioUrlOgg)!} type="audio/ogg; codecs=opus" />}
-          {audioUrlWebm && <source src={(audioUrlWebm)!} type="audio/webm" />}
-          {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={(audioUrl)!} />}
-          Your browser does not support the audio element.
-        </audio>
-
-        {/* Optional: Pause button */}
+  return (
+    <>
+      {!showPlayer ? (
         <button
-          onClick={handlePauseClick}
+          onClick={handleLoad}
+          disabled={!hasAudio}
+          title={hasAudio ? undefined : 'No audio available'}
+          aria-disabled={!hasAudio}
           style={{
-            background: '#666',
-            color: '#eee',
+            background: '#444',
+            color: '#ccc',
             border: 'none',
-            padding: '4px 8px',
-            marginTop: 6,
+            padding: '6px 12px',
             borderRadius: 4,
-            cursor: 'pointer',
+            cursor: hasAudio ? 'pointer' : 'not-allowed',
+            marginTop: 8,
+            opacity: hasAudio ? 1 : 0.5,
           }}
-          aria-label="Pause audio"
         >
-          ⏸ Pause
+          ▶️ Load Audio
         </button>
-      </>
-    )}
-  </>
-);
+      ) : (
+        <>
+          {loading && <div style={{ color: '#ccc', marginBottom: 8 }}>Loading audio...</div>}
+          {error && <div style={{ color: '#f66', marginBottom: 8 }}>{error}</div>}
+          <audio
+            ref={audioRef}
+            controls
+            preload="none"
+            style={{ width: '100%' }}
+            onCanPlay={handleCanPlay}
+            onError={handleError}
+          >
+            {audioUrlMp3 && <source src={audioUrlMp3} type="audio/mpeg" />}
+            {audioUrlOgg && <source src={audioUrlOgg} type="audio/ogg; codecs=opus" />}
+            {audioUrlWebm && <source src={audioUrlWebm} type="audio/webm" />}
+            {audioUrl && !audioUrl.match(/\.(mp3|ogg|webm)$/i) && <source src={audioUrl} />}
+            Your browser does not support the audio element.
+          </audio>
+
+          <button
+            onClick={handlePauseClick}
+            aria-label="Pause audio"
+            style={{
+              background: '#666',
+              color: '#eee',
+              border: 'none',
+              padding: '4px 8px',
+              marginTop: 6,
+              borderRadius: 4,
+              cursor: 'pointer',
+            }}
+          >
+            ⏸ Pause
+          </button>
+        </>
+      )}
+    </>
+  );
 }
 
 const Home: React.FC = () => {
   const [feeds, setFeeds] = useState<string[]>([]);
-  const [articles, setArticles] = useState<any[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -129,50 +134,43 @@ const Home: React.FC = () => {
   const [loadingFullArticle, setLoadingFullArticle] = useState(false);
   const [expandedContent, setExpandedContent] = useState<string>('');
 
-    const clearError = () => setError('');
+  const clearError = () => setError('');
 
-  const filteredArticlesSorted = articles
-  .filter((article) => {
-    const titleMatches = article.title?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Unified filtering and sorting
+  const filteredAndSortedArticles = articles
+    .filter((article) => {
+      const titleMatches = article.title?.toLowerCase().includes(searchTerm.toLowerCase());
+      const sourceMatches = !sourceFilter || article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
+      const tagsMatch = selectedTags.length === 0 || selectedTags.every((tag) => article.tags?.includes(tag));
+      return titleMatches && sourceMatches && tagsMatch;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
+      const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
+      return dateB - dateA; // newest first
+    });
 
-    const sourceMatches = !sourceFilter || article.source === sourceFilter;
+  const visibleArticles = filteredAndSortedArticles.slice(0, visibleCount);
 
-    const tagsMatch =
-      selectedTags.length === 0 ||
-      selectedTags.every((tag) => article.tags?.includes(tag));
-
-    return titleMatches && sourceMatches && tagsMatch;
-  })
-  .sort((a, b) => {
-    const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime();
-    const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime();
-    return dateB - dateA; // newest first
-  });
-
-const visibleArticles = filteredArticlesSorted.slice(0, visibleCount);
-  
-const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-  if (!loadMoreRef.current) return;
+    if (!loadMoreRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < filteredAndSortedArticles.length) {
+          setVisibleCount((prev) => prev + 10);
+        }
+      },
+      { rootMargin: '100px' }
+    );
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0].isIntersecting && visibleCount < filteredArticlesSorted.length) {
-        setVisibleCount((prev) => prev + 10);
-      }
-    },
-    {
-      rootMargin: '100px',
-    }
-  );
+    observer.observe(loadMoreRef.current);
 
-  observer.observe(loadMoreRef.current);
+    return () => {
+      if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
+    };
+  }, [filteredAndSortedArticles.length, visibleCount]);
 
-  return () => {
-    if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
-  };
-}, [filteredArticlesSorted.length, visibleCount]);
-  
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setTypedKeys((prev) => {
@@ -188,34 +186,7 @@ const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const addFeed = async (url: string): Promise<void> => {
-    if (feeds.includes(url)) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
-      if (!res.ok) throw new Error('Failed to fetch feed articles');
-      const data = await res.json();
-
-      const newArticles = data.articles.filter(
-        (newArticle: any) => !articles.some((a) => a.link === newArticle.link)
-      );
-
-      setFeeds((prev) => [...prev, url]);
-      setArticles((prev) => [...prev, ...newArticles]);
-    } catch {
-      setError('Failed to add feed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeFeed = async (url: string): Promise<void> => {
-    setFeeds((prev) => prev.filter((f) => f !== url));
-    setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
-    return Promise.resolve();
-  };
-
+  // Load feeds from localStorage and fetch articles
   useEffect(() => {
     const loadFeeds = async () => {
       try {
@@ -237,13 +208,15 @@ const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
 
         const allArticles = articlesArrays.flat();
         const uniqueArticles = allArticles.filter(
-          (article, index, self) =>
-            index === self.findIndex((a) => a.link === article.link)
+          (article, index, self) => index === self.findIndex((a) => a.link === article.link)
         );
-        // ✅ Sort by date
-uniqueArticles.sort((a, b) =>
-  new Date(b.pubDate || b.isoDate).getTime() - new Date(a.pubDate || a.isoDate).getTime()
-);
+
+        uniqueArticles.sort((a, b) => {
+          const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
+          const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
+          return dateB - dateA;
+        });
+
         setArticles(uniqueArticles);
       } catch {
         setError('Failed to fetch articles from saved feeds.');
@@ -257,26 +230,41 @@ uniqueArticles.sort((a, b) =>
     localStorage.setItem('feeds', JSON.stringify(feeds));
   }, [feeds]);
 
+  const addFeed = async (url: string): Promise<void> => {
+    if (feeds.includes(url)) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+      if (!res.ok) throw new Error('Failed to fetch feed articles');
+      const data = await res.json();
+
+      const newArticles = data.articles.filter(
+        (newArticle: Article) => !articles.some((a) => a.link === newArticle.link)
+      );
+
+      setFeeds((prev) => [...prev, url]);
+      setArticles((prev) => [...prev, ...newArticles]);
+    } catch {
+      setError('Failed to add feed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFeed = async (url: string): Promise<void> => {
+    setFeeds((prev) => prev.filter((f) => f !== url));
+    setArticles((prev) => prev.filter((a) => a.feedUrl !== url));
+    return Promise.resolve();
+  };
+
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
   };
 
-  const filteredArticles = articles.filter((article) => {
-    const matchesTags =
-      selectedTags.length === 0 ||
-      article.tags?.some((tag: string) => selectedTags.includes(tag));
-    const matchesSearch =
-      article.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSource =
-      !sourceFilter.trim() ||
-      article.source?.toLowerCase().includes(sourceFilter.toLowerCase());
-    return matchesTags && matchesSearch && matchesSource;
-  });
-
-
+  // Fetch full article content on expand (if no audio)
   useEffect(() => {
     if (!expandedArticle) {
       setExpandedContent('');
@@ -332,16 +320,20 @@ uniqueArticles.sort((a, b) =>
 
       <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
         <h1 style={styles.title}>Jaggregator</h1>
-        
+
         <FeedsManager
-  feeds={feeds}
-  addFeed={addFeed}
-  removeFeed={removeFeed}
-  loading={loading}
-  error={error}
-  clearError={clearError}        
-/>
+          feeds={feeds}
+          addFeed={addFeed}
+          removeFeed={removeFeed}
+          loading={loading}
+          error={error}
+          clearError={clearError}
+        />
+
         <section aria-label="Search articles" style={styles.controlsContainer}>
+
+          
+
           <input
             type="text"
             placeholder="Search articles..."
@@ -358,193 +350,43 @@ uniqueArticles.sort((a, b) =>
             style={{ ...styles.input, marginTop: 8 }}
             disabled={loading}
           />
+          
         </section>
-
-        <section aria-label="Filter articles by tag" style={styles.tagsContainer}>
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => toggleTag(tag)}
-              style={{
-                ...styles.tagButton,
-                ...(selectedTags.includes(tag) ? styles.tagButtonActive : {}),
-              }}
-              aria-pressed={selectedTags.includes(tag)}
-              disabled={loading}
-            >
-              {tag}
-            </button>
-          ))}
-        </section>
-
-        {loading && <p style={styles.statusText}>Loading articles...</p>}
-        {!loading && error && (
-          <p role="alert" style={{ ...styles.statusText, color: '#f66' }}>{error}</p>
-        )}
-
-        <section aria-label="News articles" style={styles.articlesSection}>
-          {filteredArticles.length === 0 && !loading && !error && (
-            <p style={styles.statusText}>No articles found.</p>
+        
+<section style={styles.articlesSection}>
+  {visibleArticles.length === 0 ? (
+    <p style={styles.statusText}>No articles found.</p>
+  ) : (
+    <ul style={styles.articleList}>
+      {visibleArticles.map((article) => (
+        <li key={article.link} style={styles.articleItem}>
+          {article.thumbnail && (
+            <img src={article.thumbnail} alt="" style={styles.thumbnail} />
           )}
-          <ul style={styles.articleList}>
-            {visibleArticles.map((article, idx) => {
-              const key = article.link || `article-${idx}`;
-              return (
-                <li key={key} style={styles.articleItem}>
-                  <img
-                    src={article.thumbnail || '/images/fallback.png'}
-                    alt={`${article.source || 'News'} logo`}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/images/fallback.png';
-                    }}
-                    style={styles.thumbnail}
-                  />
-                  <div style={styles.articleContent}>
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.articleTitle}
-                    >
-                      {article.title}
-                    </a>
-                    <p style={styles.articleDescription}>{article.description}</p>
-                    <small style={styles.articleMeta}>
-                      {new Date(article.pubDate).toLocaleString()} | {article.source}
-                    </small>
+          <div style={styles.articleContent}>
+            <a href={article.link} target="_blank" rel="noopener noreferrer" style={styles.articleTitle}>
+              {article.title}
+            </a>
+            <p style={styles.articleDescription}>{article.description}</p>
+            <div style={styles.articleMeta}>
+              {article.source} · {article.pubDate}
+            </div>
 
-                    <button
-                      onClick={() =>
-                        setExpandedArticle(
-                          expandedArticle === article.link ? null : article.link
-                        )
-                      }
-                      style={{
-                        marginRight: 10,
-                        marginTop: 6,
-                        cursor: 'pointer',
-                        background: '#444',
-                        border: 'none',
-                        color: '#eee',
-                        padding: '6px 10px',
-                        borderRadius: 4,
-                      }}
-                      aria-expanded={expandedArticle === article.link}
-                    >
-                      {expandedArticle === article.link ? 'Collapse' : 'Expand'}
-                    </button>
-
-                    {expandedArticle === article.link && (article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
-  <AudioPlayer
-   audioUrlMp3={article.audioUrlMp3}
-  audioUrlOgg={article.audioUrlOgg}
-  audioUrlWebm={article.audioUrlWebm}
-  audioUrl={article.audioUrl}
-/>
-)}
-
-                    {expandedArticle === article.link &&
-                      !loadingFullArticle &&
-                      expandedContent &&
-                      !(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
-                        <article
-                          style={{
-                            marginTop: 10,
-                            margin: '10px auto',
-                            maxWidth: 700,
-                            maxHeight: 300,
-                            overflowY: 'auto',
-                            backgroundColor: '#111',
-                            padding: 10,
-                            borderRadius: 4,
-                            color: '#ccc',
-                          }}
-                          
-                          dangerouslySetInnerHTML={{ __html: expandedContent }}
-                        />
-                      )}
-
-                    {loadingFullArticle && expandedArticle === article.link && (
-                      <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          
-
-          
- <ul>
-  {visibleArticles.map((article, index) => (
-    <li key={index}>
-      <div style={{ padding: '10px', borderBottom: '1px solid #333' }}>
-        <h3 style={{ color: '#ccc' }}>{article.title}</h3>
-        <p style={{ color: '#888' }}>{article.pubDate}</p>
-
-        <AudioPlayer
-          audioUrlMp3={article.audioUrlMp3}
-          audioUrlOgg={article.audioUrlOgg}
-          audioUrlWebm={article.audioUrlWebm}
-          audioUrl={article.audioUrl}
-        />
-
-        {expandedArticle === article.link &&
-          !loadingFullArticle &&
-          expandedContent &&
-          !(article.audioUrl || article.audioUrlMp3 || article.audioUrlOgg || article.audioUrlWebm) && (
-            <article
-              style={{
-                marginTop: 10,
-                margin: '10px auto',
-                maxWidth: 700,
-                maxHeight: 300,
-                overflowY: 'auto',
-                backgroundColor: '#111',
-                padding: 10,
-                borderRadius: 4,
-                color: '#ccc',
-              }}
-              dangerouslySetInnerHTML={{ __html: expandedContent }}
+            <AudioPlayer
+              audioUrlMp3={article.audioUrlMp3 ?? null}
+              audioUrlOgg={article.audioUrlOgg ?? null}
+              audioUrlWebm={article.audioUrlWebm ?? null}
+              audioUrl={article.audioUrl ?? null}
             />
-          )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+        
+        <section aria
 
-        {loadingFullArticle && expandedArticle === article.link && (
-          <p style={{ color: '#ccc', marginTop: 10 }}>Loading full article...</p>
-        )}
-      </div>
-    </li>
-  ))}
-</ul>
-<div ref={loadMoreRef} style={{ height: 1 }} />
-          
-        </section>
-
-        {showSecret && (
-          <section
-            style={{
-              position: 'fixed',
-              bottom: 10,
-              right: 10,
-              backgroundColor: 'rgba(0,0,0,0.8)',
-              color: '#0f0',
-              padding: 10,
-              borderRadius: 6,
-              zIndex: 9999,
-              maxWidth: 320,
-              fontSize: 12,
-              fontFamily: 'monospace',
-            }}
-            aria-live="polite"
-          >
-            <strong>Secret activated:</strong> The Powers That Be
-          </section>
-        )}
-      </main>
-    </>
-  );
-};
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
