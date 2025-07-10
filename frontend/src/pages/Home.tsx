@@ -202,8 +202,6 @@ useEffect(() => {
 
       let completed = 0;
       const total = savedFeeds.length;
-let completed = 0;
-const total = savedFeeds.length;
 
 const articlesArrays = await Promise.all(
   savedFeeds.map(async (url) => {
