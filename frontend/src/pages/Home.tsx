@@ -529,18 +529,17 @@ const styles: Record<string, React.CSSProperties> = {
     if (expandedContent === article.link) {
       setExpandedContent('');
     } else {
-      loadFullArticle(article.link); // your function to load full article
       setExpandedContent(article.link);
     }
   }}
 >
   {expandedContent === article.link ? 'Collapse' : 'Expand Article'}
 </button>
-{expandedContent === article.link && (
+{expandedArticle === article.link && (
   <div style={styles.fullArticleContent}>
     {loadingFullArticle
       ? 'Loading full article...'
-      : fullArticleCache.current[article.link]}
+      : expandedContent}
   </div>
 )}
         </>
