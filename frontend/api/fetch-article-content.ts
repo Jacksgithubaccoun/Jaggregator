@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Use JSDOM to extract plain text from the HTML string returned by Readability
-    const contentDom = new JSDOM(article.content);
+    const contentDom = new JSDOM(article.content ?? '');
     const textContent = contentDom.window.document.body.textContent || '';
 
     res.status(200).json({
@@ -38,4 +38,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     res.status(500).json({ error: 'Error fetching or parsing article' });
   }
-}"
+}
