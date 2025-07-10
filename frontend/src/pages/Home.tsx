@@ -155,7 +155,7 @@ const Home: React.FC = () => {
 
   const visibleArticles = filteredAndSortedArticles.slice(0, visibleCount);
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  
   useEffect(() => {
     if (!loadMoreRef.current) return;
     const observer = new IntersectionObserver(
