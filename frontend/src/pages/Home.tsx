@@ -551,10 +551,11 @@ return (
     loadingFullArticle ? (
       <div style={styles.fullArticleContent}>Loading full article...</div>
     ) : (
-      <ArticleContent
-        title={article.title}
-        text={fullArticleCache.current[article.link] || expandedContent}
-      />
+      <ArticleContent 
+  title={data.title} 
+  text={data.text} 
+  images={data.images} 
+/>
     )
   )}
 </>
