@@ -136,100 +136,7 @@ const Home: React.FC = () => {
 
   const clearError = () => setError('');
 
-  const styles: Record<string, React.CSSProperties> = {
-    container: {
-      maxWidth: 900,
-      margin: '20px auto',
-      padding: 16,
-      color: '#ccc',
-    },
-    title: {
-      fontSize: 32,
-      marginBottom: 16,
-      textAlign: 'center',
-    },
-    controlsContainer: {
-      marginBottom: 16,
-    },
-    input: {
-      width: '100%',
-      padding: 8,
-      background: '#222',
-      border: '1px solid #555',
-      borderRadius: 4,
-      color: '#eee',
-    },
-    tagsContainer: {
-      marginBottom: 16,
-      display: 'flex',
-      gap: 8,
-      flexWrap: 'wrap',
-    },
-    tagButton: {
-      backgroundColor: '#333',
-      border: '1px solid #555',
-      borderRadius: 4,
-      color: '#ccc',
-      padding: '6px 12px',
-      cursor: 'pointer',
-    },
-    tagButtonActive: {
-      backgroundColor: '#0f0',
-      color: '#000',
-      fontWeight: 'bold',
-    },
-    statusText: {
-      textAlign: 'center',
-      marginTop: 16,
-      fontStyle: 'italic',
-    },
-    articlesSection: {
-      marginTop: 16,
-    },
-    articleList: {
-      listStyle: 'none',
-      padding: 0,
-    },
-    articleItem: {
-      display: 'flex',
-      gap: 12,
-      padding: 12,
-      borderBottom: '1px solid #444',
-    },
-    thumbnail: {
-      width: 80,
-      height: 80,
-      objectFit: 'cover',
-      borderRadius: 4,
-    },
-    articleContent: {
-      flex: 1,
-    },
-    articleTitle: {
-      color: '#0f0',
-      fontWeight: 'bold',
-      textDecoration: 'none',
-    },
-    articleDescription: {
-      marginTop: 4,
-      fontSize: 14,
-      color: '#ccc',
-    },
-    articleMeta: {
-      fontSize: 12,
-      color: '#888',
-    },
-    loadMoreButton: {
-      marginTop: 12,
-      padding: '8px 16px',
-      borderRadius: 4,
-      border: 'none',
-      backgroundColor: '#0f0',
-      color: '#000',
-      cursor: 'pointer',
-    },
-  };
-
+  // Unified filtering and sorting
   const filteredAndSortedArticles = articles
     .filter((article) => {
       const titleMatches = article.title?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -240,7 +147,7 @@ const Home: React.FC = () => {
     .sort((a, b) => {
       const dateA = new Date(a.pubDate || a.isoDate || a.date || 0).getTime() || 0;
       const dateB = new Date(b.pubDate || b.isoDate || b.date || 0).getTime() || 0;
-      return dateB - dateA;
+      return dateB - dateA; // newest first
     });
 
   const visibleArticles = filteredAndSortedArticles.slice(0, visibleCount);
@@ -279,6 +186,7 @@ const Home: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Load feeds from localStorage and fetch articles
   useEffect(() => {
     const loadFeeds = async () => {
       try {
@@ -288,7 +196,7 @@ const Home: React.FC = () => {
         const articlesArrays = await Promise.all(
           savedFeeds.map(async (url) => {
             try {
-              const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+              const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
               if (!res.ok) return [];
               const data = await res.json();
               return data.articles || [];
@@ -327,7 +235,7 @@ const Home: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url)}`);
+      const res = await fetch(/api/fetch-article?url=${encodeURIComponent(url)});
       if (!res.ok) throw new Error('Failed to fetch feed articles');
       const data = await res.json();
 
@@ -356,6 +264,7 @@ const Home: React.FC = () => {
     );
   };
 
+  // Fetch full article content on expand (if no audio)
   useEffect(() => {
     if (!expandedArticle) {
       setExpandedContent('');
@@ -379,7 +288,7 @@ const Home: React.FC = () => {
     const fetchFullArticle = async () => {
       setLoadingFullArticle(true);
       try {
-        const res = await fetch(`/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)}`);
+        const res = await fetch(/api/fetch-full-article?url=${encodeURIComponent(expandedArticle)});
         if (!res.ok) throw new Error('Failed to load full article');
         const data = await res.json();
         setExpandedContent(data.content || 'No content available.');
@@ -392,99 +301,8 @@ const Home: React.FC = () => {
 
     fetchFullArticle();
   }, [expandedArticle, articles]);
-
-  return (
-    <>
-      <MatrixRain />
-
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 5,
-        }}
-      />
-
-      <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
-        <h1 style={styles.title}>Jaggregator</h1>
-
-        <FeedsManager
-          feeds={feeds}
-          addFeed={addFeed}
-          removeFeed={removeFeed}
-          loading={loading}
-          error={error}
-          clearError={clearError}
-        />
-
-        <section aria-label="Search articles" style={styles.controlsContainer}>
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.input}
-            disabled={loading}
-          />
-          <input
-            type="text"
-            placeholder="Filter by source name..."
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            style={{ ...styles.input, marginTop: 8 }}
-            disabled={loading}
-          />
-        </section>
-
-        <section style={styles.articlesSection}>
-          {visibleArticles.length === 0 ? (
-            <p style={styles.statusText}>No articles found.</p>
-          ) : (
-            <ul style={styles.articleList}>
-              {visibleArticles.map((article) => (
-                <li key={article.link} style={styles.articleItem}>
-                  {article.thumbnail && (
-                    <img src={article.thumbnail} alt="" style={styles.thumbnail} />
-                  )}
-                  <div style={styles.articleContent}>
-                    <a
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.articleTitle}
-                    >
-                      {article.title}
-                    </a>
-                    <p style={styles.articleDescription}>{article.description}</p>
-                    <div style={styles.articleMeta}>
-                      {article.source} · {article.pubDate}
-                    </div>
-
-                    <AudioPlayer
-                      audioUrlMp3={article.audioUrlMp3 ?? null}
-                      audioUrlOgg={article.audioUrlOgg ?? null}
-                      audioUrlWebm={article.audioUrlWebm ?? null}
-                      audioUrl={article.audioUrl ?? null}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </main>
-    </>
-  );
-};
-
-
-
-
 const styles: Record<string, React.CSSProperties> = {
+  
   container: {
     maxWidth: 900,
     margin: '20px auto',
@@ -577,5 +395,91 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
 };
+  return (
+  <>
+    <MatrixRain />
 
-export default Home;
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        zIndex: 5,
+      }}
+    />
+
+    <main style={{ ...styles.container, position: 'relative', zIndex: 10 }}>
+      <h1 style={styles.title}>Jaggregator</h1>
+
+      <FeedsManager
+        feeds={feeds}
+        addFeed={addFeed}
+        removeFeed={removeFeed}
+        loading={loading}
+        error={error}
+        clearError={clearError}
+      />
+
+      <section aria-label="Search articles" style={styles.controlsContainer}>
+        <input
+          type="text"
+          placeholder="Search articles..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={styles.input}
+          disabled={loading}
+        />
+        <input
+          type="text"
+          placeholder="Filter by source name..."
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+          style={{ ...styles.input, marginTop: 8 }}
+          disabled={loading}
+        />
+      </section>
+
+      <section style={styles.articlesSection}>
+        {visibleArticles.length === 0 ? (
+          <p style={styles.statusText}>No articles found.</p>
+        ) : (
+          <ul style={styles.articleList}>
+            {visibleArticles.map((article) => (
+              <li key={article.link} style={styles.articleItem}>
+                {article.thumbnail && (
+                  <img src={article.thumbnail} alt="" style={styles.thumbnail} />
+                )}
+                <div style={styles.articleContent}>
+                  <a
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.articleTitle}
+                  >
+                    {article.title}
+                  </a>
+                  <p style={styles.articleDescription}>{article.description}</p>
+                  <div style={styles.articleMeta}>
+                    {article.source} · {article.pubDate}
+                  </div>
+
+                  <AudioPlayer
+                    audioUrlMp3={article.audioUrlMp3 ?? null}
+                    audioUrlOgg={article.audioUrlOgg ?? null}
+                    audioUrlWebm={article.audioUrlWebm ?? null}
+                    audioUrl={article.audioUrl ?? null}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
+  </>
+);
+
+  export default Home;
