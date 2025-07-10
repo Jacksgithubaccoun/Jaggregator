@@ -96,7 +96,7 @@ export default async function handler(
           description: item.contentSnippet || item.content || '',
           tags: [],
           thumbnail: '',
-          audioUrl: isAudio ? item.enclosure.url : null,
+          audioUrl,
         };
 
         article.tags = detectTags(article);
